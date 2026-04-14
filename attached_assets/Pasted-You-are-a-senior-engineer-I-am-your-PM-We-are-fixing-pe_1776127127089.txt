@@ -1,0 +1,295 @@
+You are a senior engineer. I am your PM. We are fixing pedagogical 
+gaps in the Code4Kidz lesson flow — not visual polish. 
+Read every word. These are surgical changes to lesson logic only.
+Do not touch animations, CSS, or the Byte animation system.
+
+═══════════════════════════════════════════
+FIX 1 — LESSON 1 WARM-UP: MAKE IT VISIBLE
+═══════════════════════════════════════════
+
+Current behavior:
+The warm-up auto-advances after 800ms. The kid sees nothing happen 
+and the lesson has already started. Confusing.
+
+Change to:
+When LessonPage mounts and step type is 'warmup' with xp: 0 
+(Lesson 1 only — the auto-advance warm-up):
+
+Show a full-panel splash for exactly 2 seconds before advancing.
+The splash contains:
+  - Byte in cheer/idle pose, large (120px)
+  - Lesson title: "Lesson 1 — Say Hello to the Web!"
+  - Byte speech bubble (typewriter): 
+    "Hey! I am Byte. Today you make your FIRST ever webpage.
+    Millions of people will be able to see things you make.
+    Let us start RIGHT NOW."
+  - A thin loading bar at the bottom that fills from 0% to 100% 
+    over exactly 2 seconds. When it hits 100%, advanceStep() fires.
+  - No button. No user action. This is the cinematic opening.
+
+After the 2 seconds: fade the splash out (opacity 1→0, 0.3s),
+then the 3-panel editor layout fades in (opacity 0→1, 0.3s).
+
+The warm-up for Lessons 2-6 (the 15-second countdown) 
+is NOT changed — only the Lesson 1 auto-advance warm-up.
+
+
+═══════════════════════════════════════════
+FIX 2 — SCAFFOLDED CODE: TELL THE KID WHAT JUST APPEARED
+═══════════════════════════════════════════
+
+Current behavior:
+Steps 2, 3, and 5 pre-fill the editor with code from previous steps.
+The kid sees code appear with no explanation. Confusing.
+
+Change to:
+When a step loads with non-empty startingCode AND step type 
+is NOT 'warmup':
+
+1. The editor highlights the pre-filled code briefly in purple:
+   Add a CodeMirror decoration (background rgba(92,62,188,0.15))
+   to all lines EXCEPT the last empty line (where the cursor lands).
+   This highlight fades out over 1.5 seconds.
+
+2. Byte speech bubble shows a "handoff" message BEFORE the 
+   main bytePrompt. This message appears for 2 seconds then 
+   transitions to the normal bytePrompt.
+
+   The handoff messages by step type:
+
+   For 'write' steps with startingCode (steps 2, 3):
+     "I saved your work from before. See those tags?
+      You wrote those. Now add the next piece."
+
+   For 'fix' steps:
+     "Uh oh — I wrote this code and made a mistake.
+      Find it and fix it. The preview will tell you when it is right."
+
+   For 'identify' steps: same as fix.
+
+   For 'combine' steps (step 5):
+     "Look — your whole page is here. 
+      NOW make it yours. Change that h1 to something real about 
+      [topicName]. I want to see YOUR words on the screen."
+
+3. The cursor auto-positions to the most likely edit point:
+   For 'write' steps: position cursor at the end of the file
+   For 'fix' steps: position cursor at line 1 (kid scans from top)
+   For 'combine' steps: position cursor inside the h1 tag,
+     selecting the current h1 text so the kid can type over it
+
+Do NOT change the startingCode content itself.
+Only add the highlight decoration, the handoff bubble, 
+and the cursor positioning.
+
+
+═══════════════════════════════════════════
+FIX 3 — STEP 5 AUTO-PASS BUG (CRITICAL)
+═══════════════════════════════════════════
+
+Current behavior:
+The 'combine' step (step 5 of every lesson) pre-fills code that 
+already satisfies the validator. The step can pass before the kid 
+edits anything, because the startingCode renders in the iframe and 
+the validator fires on the initial render.
+
+This is the single most important fix in this prompt.
+The kid must earn step 5. It cannot auto-complete.
+
+Fix:
+
+In the validation logic, add a new concept: editRequired.
+
+Add a boolean field to LessonStep:
+  editRequired?: boolean
+
+Set editRequired: true on every step with type === 'combine'.
+
+In the validate() function, before checking the step's validator:
+
+  if (step.editRequired && !state.hasEditedCurrentStep) {
+    return 'fail'  // Block the pass until the kid types something
+  }
+
+Add to gameStore:
+  hasEditedCurrentStep: boolean  // resets to false on each step load
+  setHasEdited: () => void       // called on first onChange in editor
+
+In Editor.tsx onChange handler:
+  On the FIRST keystroke of any step, call setHasEdited().
+  This unlocks the validator for editRequired steps.
+
+Result: 
+  - The combine step loads with correct-looking code in the editor
+  - The preview shows the page with their topic (looks great)
+  - But the step does NOT pass yet
+  - Byte says: "Look — your whole page is here. NOW make it yours."
+  - The moment the kid types a single character: hasEdited becomes true
+  - On the next validation cycle: the full validator runs
+  - If the h1 still has text: it passes
+  - The kid feels like THEY did something
+
+
+═══════════════════════════════════════════
+FIX 4 — STEP 5 INSTRUCTION COPY
+═══════════════════════════════════════════
+
+Current behavior:
+Step 5 instruction says "Type your first words inside body" 
+which is generic and does not communicate what the kid should do 
+with the pre-filled page.
+
+Change the instruction for every 'combine' step to use this pattern:
+
+  instruction: (topic: string) =>
+    `Your ${topic} page is almost ready.\n\n` +
+    `See the h1 tag? That is YOUR main title.\n` +
+    `Click on it and change the words to something\n` +
+    `real about ${topic} — in your own words.\n\n` +
+    `When you see YOUR words in the preview — you did it.`
+
+  bytePrompt: (topic: string) =>
+    `This is the moment.\n` +
+    `Your words. Your page. Your ${topic}.\n` +
+    `Change that h1 and watch the preview.`
+
+Apply this to the combine step in all 6 existing lessons.
+The function signature is (topic: string) => string — 
+consistent with how other instructions are already written.
+
+
+═══════════════════════════════════════════
+FIX 5 — WARM-UP TIMER: SHOW WHAT IS BEING REVIEWED
+═══════════════════════════════════════════
+
+Current behavior:
+Lessons 2-6 warm-up has a 15-second countdown timer and 
+an instruction telling the kid to type something.
+The kid does not know WHY they are doing this — 
+there is no connection to "this is what you learned last lesson."
+
+Change to:
+In the warm-up step display, add a "REVIEWING:" label above 
+the instruction text:
+
+  <div className="warmup-review-label">
+    REVIEWING FROM LESSON {lessonNumber - 1}
+  </div>
+
+Style:
+  font-size: 11px
+  font-weight: 900
+  letter-spacing: 0.1em
+  color: #D4581A
+  text-transform: uppercase
+  margin-bottom: 8px
+
+And update the warm-up bytePrompt to always be:
+  `Before we start — quick review.\n` +
+  `Show me you remember [what was taught last lesson].\n` +
+  `60 seconds. No hearts at risk. Go.`
+
+These are the per-lesson review prompts (update each lesson file):
+  Lesson 2 warmup bytePrompt:
+    "Show me an html page with a body tag.
+     Type the structure — html, head, body.
+     You learned this in Lesson 1."
+  Lesson 3 warmup bytePrompt:
+    "Add an h1 and an h2 to a page.
+     Your topic as h1, any subtitle as h2.
+     You learned this in Lesson 2."
+  Lesson 4 warmup bytePrompt:
+    "Write three p tags — each one a sentence about your topic.
+     Just paragraphs. No CSS yet.
+     You learned this in Lesson 3."
+  Lesson 5 warmup bytePrompt:
+    "Add a style tag and give your h1 a color.
+     One CSS rule. Just one.
+     You learned this in Lesson 4."
+  Lesson 6 warmup bytePrompt:
+    "Make an unordered list — ul with three li items.
+     About anything you want.
+     You learned this in Lesson 5."
+
+
+═══════════════════════════════════════════
+FIX 6 — FIX STEP VALIDATOR FOR LESSON 1 STEP 4
+═══════════════════════════════════════════
+
+Current behavior (from the code analysis):
+Step 4 of Lesson 1 is a 'fix' step. The broken code is missing 
+</body>. The validator checks raw code for </body>.
+
+This validator checks the raw code string, NOT the iframe DOM.
+That is correct for a fix step — but make sure the raw code 
+check happens via the editor value in the store, not 
+via iframe.contentDocument, because the DOM will parse 
+and auto-close the tag anyway (browsers are forgiving).
+
+Confirm that the fix step validator pattern is:
+  validate: (doc: Document, rawCode?: string) =>
+    (rawCode ?? '').includes('</body>')
+
+If the validate function only receives doc and not rawCode:
+  Add rawCode as an optional second parameter to the 
+  validate() utility function signature:
+    validate(iframe, step, rawCode?: string)
+  
+  Pass gameStore.code as rawCode when calling validate():
+    validate(iframeRef, currentStep, gameStore.code)
+  
+  Fix steps that need raw string checking can then use rawCode.
+  Steps that check DOM structure continue using doc as before.
+
+Apply this pattern to the broken code check in Lesson 1 Step 4
+and any other fix/identify step that checks for a closing tag
+(since browsers silently auto-close missing tags in the DOM).
+
+
+═══════════════════════════════════════════
+BUILD ORDER
+═══════════════════════════════════════════
+
+1. FIX 3 first — the auto-pass bug. This is the most 
+   important fix. Test by loading any combine step and 
+   confirming the step does NOT advance until you type.
+
+2. FIX 6 — closing tag validator. Test by loading Lesson 1 
+   Step 4 with the broken code and confirming that adding 
+   </body> (and only that) causes a pass.
+
+3. FIX 1 — Lesson 1 warm-up splash. Test that the 2-second 
+   loading bar fires, Byte's intro plays, and the editor 
+   appears after the fade.
+
+4. FIX 2 — scaffolded code handoff. Test all three contexts:
+   write step (steps 2, 3), fix step (step 4), combine (step 5).
+   Confirm the purple highlight fades, the handoff bubble 
+   transitions to the main prompt, and cursor lands correctly.
+
+5. FIX 4 — combine step instruction copy. Update all 6 lessons.
+   Read each one out loud. If you trip on a word, rewrite it.
+   Grade 2-4 reading level throughout.
+
+6. FIX 5 — warm-up review labels. Update all 6 warm-up 
+   bytePrompt strings and add the "REVIEWING FROM LESSON N" label.
+
+═══════════════════════════════════════════
+DEFINITION OF DONE
+═══════════════════════════════════════════
+
+These four things must be true:
+
+1. No step in any lesson can auto-pass.
+   Every pass requires at least one keystroke from the kid.
+
+2. Every time code appears pre-filled in the editor,
+   the kid is told what it is and where their cursor should go.
+
+3. The Lesson 1 opening has a 2-second Byte intro 
+   before the editor appears.
+
+4. Every warm-up clearly says which lesson it is reviewing 
+   and what the kid is about to be asked to do.
+
+If any of those four are not true, the lesson is not done.

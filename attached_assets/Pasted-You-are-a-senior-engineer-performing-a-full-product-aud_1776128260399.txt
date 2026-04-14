@@ -1,0 +1,507 @@
+You are a senior engineer performing a full product audit 
+of Code4Kidz before a BRL fellowship pitch. 
+
+Go through every item in this list. For each one, tell me:
+- PASS (working correctly)
+- FAIL (broken or missing)
+- PARTIAL (exists but needs work)
+
+For every FAIL or PARTIAL, tell me exactly what the fix is 
+in one or two sentences. No fluff. Be precise.
+
+Format your response as a table at the end:
+Item | Status | Fix needed
+Every item must have a status. No skips.
+Flag any FAIL in Section 7 or Section 8 as DEMO BLOCKER.
+
+══════════════════════════════════
+SECTION 1 — LESSON LOGIC
+══════════════════════════════════
+
+1.1  Does any step auto-pass without the kid typing anything?
+     Check every combine step across all 6 lessons.
+     The editRequired guard must be in place.
+
+1.2  Does the fix step validator use raw code string (not DOM)
+     for closing tag checks?
+     Browsers auto-close missing tags — the DOM always 
+     shows the tag even when the code is missing it.
+
+1.3  Does the Lesson 1 warm-up show the 2-second Byte intro 
+     splash before the editor appears?
+
+1.4  Do Lessons 2-6 warm-ups show "REVIEWING FROM LESSON N" 
+     and a clear prompt about what concept is being reviewed?
+
+1.5  Is topicName injected into every instruction that 
+     references it? Test with topicName = "Minecraft" and 
+     read every step instruction in Lessons 1-3 out loud.
+
+1.6  Does the editor reset to startingCode when a fix or 
+     identify step loads?
+
+1.7  Does the hint button only appear after 2 failed attempts?
+
+1.8  Does heart loss only fire after code has been invalid 
+     and UNCHANGED for 3 seconds? Not on every wrong keystroke.
+
+1.9  Does the mistakeLog capture steps with failCount > 0?
+     Does ReviewPage load them sorted by failCount descending, 
+     capped at 3?
+
+1.10 Does the ReviewPage block heart loss completely?
+
+1.11 Does markLessonComplete() get called exactly once 
+     per lesson completion?
+
+1.12 Does streak logic work across two separate browser sessions?
+     Set lastPlayedDate in localStorage to yesterday, reload, 
+     confirm streak increments.
+
+1.13 Does XP persist correctly across lessons?
+     Complete Lesson 1. Navigate to Lesson 2. 
+     Confirm XP counter shows Lesson 1 total, not 0.
+
+1.14 Do hearts refill to 3 at the start of each new lesson?
+
+══════════════════════════════════
+SECTION 2 — ONBOARDING
+══════════════════════════════════
+
+2.1  Does topicName save to Zustand when the kid selects 
+     a chip OR submits the text input?
+
+2.2  Does topicName survive navigation from 
+     /onboarding → /map → /lesson/1?
+
+2.3  Does the LET'S GO! button stay disabled until 
+     a topic is selected or typed?
+
+2.4  Does the button text change to 
+     "Let's build my [topicName] page →" when selected?
+
+2.5  If the kid types a topic AND selects a chip, 
+     does the last interaction win?
+     Type "Cats", click "Minecraft" → topicName = "Minecraft"
+     Then type "Cats" → topicName = "Cats"
+
+2.6  Does Screen 3 show the actual topicName the kid chose, 
+     not a hardcoded value?
+
+2.7  If the kid hits back from the map, does the app 
+     skip onboarding and return to map (since topicName exists)?
+
+2.8  Is there a class code input in onboarding?
+     If yes: does it save to classroomCode in the store?
+
+══════════════════════════════════
+SECTION 3 — MAP PAGE
+══════════════════════════════════
+
+3.1  Do lesson nodes correctly show completed (green), 
+     current (purple glow), and locked (grey padlock)?
+
+3.2  Can the kid click a completed node to replay 
+     without resetting XP or streak?
+
+3.3  Do locked nodes (7-10) refuse to navigate and 
+     show a "Coming soon" message?
+
+3.4  Does Byte's map speech bubble pull topicName 
+     from the store — not hardcoded?
+
+3.5  Is the phantom empty div/sidebar on the left 
+     of the map page fully removed?
+
+══════════════════════════════════
+SECTION 4 — LESSON PAGE
+══════════════════════════════════
+
+4.1  Does the live preview update within 300ms of 
+     the kid stopping typing?
+
+4.2  Does the preview show the correct topicName 
+     in pre-filled startingCode?
+
+4.3  Does the editor reset to the new step's 
+     startingCode on step advance?
+
+4.4  Does the step progress bar update correctly 
+     on step advance?
+
+4.5  Is there a visual difference between the warm-up 
+     display and a regular step display?
+
+4.6  Does Exit navigate to map without resetting 
+     lesson progress?
+
+4.7  Does hint text appear and is it readable?
+     Not orange text on orange background.
+
+4.8  When 0 hearts remain, does the lesson end and 
+     navigate to map with the lesson shown as in-progress?
+
+4.9  Does Byte's mood change correctly:
+     idle on step load, cheer on pass, think when stuck 
+     or hint shown, sad on heart loss, story on story moment?
+
+4.10 Is the editor font size at least 18px?
+     Inspect CodeMirror content in DevTools.
+
+4.11 Is there HTML syntax highlighting in the editor?
+
+4.12 Does CodeMirror auto-close tags?
+     Type <h1 — confirm </h1> auto-appears.
+
+══════════════════════════════════
+SECTION 5 — COMPLETION & REVIEW
+══════════════════════════════════
+
+5.1  Does confetti fire on the completion screen?
+
+5.2  Is there exactly ONE celebration heading?
+     No duplicate bars or secondary messages.
+
+5.3  Does the XP counter show the correct total?
+
+5.4  Does CONTINUE navigate to map, not back to lesson?
+
+5.5  Does the PERFECT badge only appear if no hearts 
+     were lost?
+
+5.6  Does ReviewPage skip entirely when mistakeLog 
+     is empty?
+
+5.7  Do review steps show the original instruction 
+     and the broken starting code?
+
+══════════════════════════════════
+SECTION 6 — ACCESSIBILITY & PERFORMANCE
+══════════════════════════════════
+
+6.1  Run Lighthouse. Report scores for Performance, 
+     Accessibility, Best Practices, SEO.
+     Target: Performance > 80, Accessibility > 85.
+
+6.2  Can the full lesson flow be completed by keyboard only?
+     Tab through hint button, next step, exit — all must 
+     have visible focus rings.
+
+6.3  Is there a mute button on the lesson page?
+
+6.4  Does the app work on Chrome, Safari, and Firefox?
+     The iframe srcdoc behaves differently in Safari.
+
+6.5  Does the 3-panel layout hold at 1280px viewport?
+     No collapsing, no overflow.
+
+6.6  What happens navigating directly to /lesson/2 
+     without completing Lesson 1?
+     Should redirect to /map or /onboarding.
+
+6.7  What happens if localStorage is cleared mid-session?
+     Should not crash. Should redirect to /onboarding.
+
+══════════════════════════════════
+SECTION 7 — BRL DEMO READINESS
+══════════════════════════════════
+
+7.1  Is the app live at a public URL right now? Paste it.
+
+7.2  Are there console errors on any page?
+     Open DevTools on every route and report red errors.
+
+7.3  Are any fake stats (50K+, 120+, 4.9★) still visible?
+
+7.4  Is the Classroom nav hidden or marked coming soon?
+
+7.5  Are there any dead buttons visible to users?
+     Share Achievement, any unbuilt feature button.
+
+7.6  Cold start time from URL click to landing page visible?
+     Target: under 2 seconds.
+
+7.7  Does the landing page look good on iOS Safari?
+     Judges may pull out their phone at BRL.
+
+7.8  Do all routes render something useful?
+     Test: /map /lesson/1 /lesson/2 /complete/1 
+     /onboarding /review/1
+
+══════════════════════════════════
+SECTION 8 — BYTE DESIGN & ANIMATION
+══════════════════════════════════
+
+8.1  Is Byte NEVER completely still on any screen?
+     At minimum: the idle float (y oscillation) must be 
+     running at all times. A static Byte is a dead Byte.
+
+8.2  Does Byte's body sway and float use DIFFERENT 
+     timing so they never sync?
+     Synchronized motion looks mechanical. 
+     Float: 3.5s. Sway: 5s. Never the same duration.
+
+8.3  Do Byte's eyes track the user's mouse cursor?
+     Move the cursor slowly across the lesson panel.
+     The pupils should follow with a slight lag.
+     This is the single most important detail for 
+     making kids feel seen by Byte.
+
+8.4  Is the cheer animation a real JUMP (y -22px) 
+     with spring physics — not just a scale pulse?
+     A scale pulse looks like a notification. 
+     A jump looks like joy.
+
+8.5  Does the star burst fire on correct answers?
+     8 gold particles should emit from Byte's center 
+     and travel outward in different directions.
+
+8.6  Does Byte's sad state include the red flash 
+     before drooping?
+     The red flash (like a hit in a video game) 
+     communicates "ouch" instantly before the droop.
+
+8.7  Do Byte's arms move independently?
+     Idle: both arms sway at different speeds.
+     Cheer: both arms shoot up simultaneously.
+     Think: right arm moves to chin position.
+     Sad: both arms droop lower.
+
+8.8  Does the speech bubble use the typewriter effect?
+     Characters appear one at a time at 28ms per character.
+     Punctuation (. ! ?) pauses 220ms.
+     If text still appears all at once: FAIL.
+
+8.9  Does the speech bubble shake when a word 
+     is in ALL CAPS?
+     "YOU DID IT!" should cause the bubble to 
+     micro-shake as those words are typed out.
+
+8.10 Does the speech bubble change background color 
+     by Byte's mood?
+     idle: white. cheer: light green. think: light orange.
+     sad: light red. story: light pink with label.
+
+8.11 Does Byte wave hello when the lesson page first loads?
+     Right arm should wave 3 times before settling to idle.
+
+8.12 Does Byte lean forward during story mode?
+     The body should tilt -3 degrees toward the screen.
+     Byte is sharing something personal — the posture 
+     should communicate intimacy.
+
+8.13 Is the story bubble visually distinct from 
+     regular speech bubbles?
+     It should have a pink left border, pink background, 
+     and a small "Byte's story" label at the top.
+
+8.14 Does Byte enter the lesson page from below 
+     (y: 60 → 0) rather than just appearing?
+     The entrance animation makes Byte feel like 
+     they arrived, not like they were always there.
+
+8.15 Is Byte's size appropriate for each screen?
+     Onboarding Screen 1: large (180-200px) — hero moment
+     Topic picker Screen 2: small (88px) — watching, not dominating
+     Lesson panel: medium (96px) — present but not distracting
+     Completion screen: large (140px minimum) — celebrating
+
+8.16 Is there a glow or bloom effect behind Byte 
+     on the dark background screens?
+     A radial gradient glow (rgba(92,62,188,0.3), blur 40px) 
+     behind Byte makes them feel luminous rather than pasted on.
+
+══════════════════════════════════
+SECTION 9 — VISUAL DESIGN & UI
+══════════════════════════════════
+
+9.1  Is the lesson panel background a gradient 
+     (#EDE9FB to #E8E3F8) rather than flat white?
+     Flat white makes the panel look like a word document.
+
+9.2  Does the warm-up card use the correct styling?
+     Background: #FEF0D6, border: 2px solid #D4581A.
+     Not a generic grey card.
+
+9.3  Is the warm-up timer circle stroked in orange (#D4581A)?
+     Does it turn red (#B33A1C) under 20 seconds?
+     Does it pulse under 10 seconds?
+
+9.4  Is the "YOUR MISSION" label in the mission card 
+     the correct style?
+     11px, bold, uppercase, #5C3EBC, letter-spacing 0.1em.
+     Not a generic heading.
+
+9.5  Does the hint button look like a button — not a link?
+     border: 2px solid #D4581A, background: #FEF0D6, 
+     color: #D4581A, rounded corners, 💡 emoji.
+     The attention ring pulse must be visible.
+
+9.6  Is the Exit button styled correctly?
+     border: 2px solid #D4CFF5, color: #5C3EBC.
+     On hover: background #EDE9FB.
+     Not a plain text link.
+
+9.7  Does the live preview have a warm off-white background 
+     (#FAFAF8) rather than pure white?
+     Pure white inside an iframe looks clinical.
+
+9.8  Do h1, h2, h3, p, img, ul, li elements in the 
+     preview have sensible default styles?
+     h1 at 2rem bold. p with line-height 1.7.
+     Without defaults the preview looks broken even 
+     when the code is correct.
+
+9.9  Is the CodeMirror editor background the correct dark color?
+     Background: #1A1A2E. Not pure black, not VS Code grey.
+     The editor should feel like a real but friendly IDE.
+
+9.10 Does the editor show line numbers?
+     Line numbers help kids find the specific line 
+     Byte's hint is referring to.
+
+9.11 Is the step progress bar using the correct colors?
+     Completed: #1A7A4E. Current: shimmer between 
+     #5C3EBC and #9B72F0. Upcoming: rgba(255,255,255,0.15).
+
+9.12 Does the XP pop animation float upward and fade?
+     "+10 XP" should float up from the counter and 
+     disappear — not just flash the number.
+
+9.13 Does the heart loss animation shake the HeartBar?
+     The entire HeartBar should shake left-right 
+     when a heart is lost, not just change color.
+
+9.14 Is the completion screen background animated?
+     The gradient should slowly shift 
+     (bgShift keyframe, 6s, linear, infinite).
+     A static background on the victory screen 
+     kills the celebration energy.
+
+9.15 Is the trophy animated on the completion screen?
+     It should spring in (scale 0→1.3→1.0) and 
+     wobble (rotate ±8 degrees) as it lands, 
+     then gently float.
+
+9.16 Are the brand colors used consistently throughout?
+     Purple: #5C3EBC. Orange: #D4581A. 
+     Green: #1A7A4E. Background: #F8F7F4.
+     Check for any rogue greys, blues, or default 
+     browser colors appearing where brand colors should be.
+
+9.17 Is the font size on all instruction text 
+     at least 16px with line-height 1.65 or higher?
+     Dense small text in a lesson panel makes 
+     7-year-olds give up before they start.
+
+9.18 Are there decorative floating shapes or 
+     particles in the background of dark screens?
+     The onboarding, map, and lesson panel should 
+     feel like a world — not a flat color.
+
+9.19 Does the skill tree on the map page have a 
+     flowing energy animation on the connector lines?
+     Lines should feel like they carry energy 
+     downward toward the next lesson.
+
+9.20 Is there a visual hierarchy between completed, 
+     current, and locked nodes on the map?
+     From 3 feet away a kid must immediately know 
+     which node to tap without reading any text.
+     Green filled = done. Purple glowing = go here. 
+     Grey dim = not yet.
+
+══════════════════════════════════
+SECTION 10 — UX FLOW & FEEL
+══════════════════════════════════
+
+10.1 Is there dead silence on any major interaction?
+     Every tap that does something meaningful must 
+     have either a sound, an animation, or both.
+     List any taps or interactions that currently 
+     produce no feedback at all.
+
+10.2 Is there any moment where the kid has to wait 
+     more than 2 seconds with nothing happening on screen?
+     Loading states, route transitions, iframe renders — 
+     all must show something while waiting.
+
+10.3 Does the app feel like it respects the kid's 
+     time and intelligence?
+     Check: does any screen have more than 40 words 
+     of text visible at once? If yes, flag it.
+     Kids at age 7-10 disengage from walls of text instantly.
+
+10.4 Does every screen have exactly ONE primary action?
+     One button, one thing to do.
+     List any screen that has two or more equal-weight CTAs.
+
+10.5 Is there a moment on every screen where the kid 
+     knows they are making progress?
+     This can be XP going up, a step completing, 
+     Byte reacting, a node turning green.
+     List any screen that has zero progress feedback.
+
+10.6 Does the tap target size on all buttons meet 
+     minimum touch standards?
+     Minimum 44x44px for all tappable elements.
+     Check the chip pills, the hint button, the exit button.
+
+10.7 Is there a consistent back/exit navigation 
+     pattern across all lesson pages?
+     The exit button must always be in the same position.
+     Kids should never wonder how to leave a screen.
+
+10.8 After a kid completes a lesson and returns to the map,
+     is their progress immediately visible without scrolling?
+     The newly completed node should be visible 
+     without the kid having to scroll down.
+
+10.9 Is the onboarding completable in under 90 seconds?
+     Time yourself going from the landing page to 
+     the first step of Lesson 1. 
+     If it takes more than 90 seconds: flag every 
+     screen that added unnecessary time.
+
+10.10 Is there any interaction that requires the kid 
+      to read an error message to understand what went wrong?
+      Error states should communicate through Byte 
+      and animation — not through text error messages.
+      List any error state that currently shows 
+      text without a Byte reaction.
+
+10.11 Does the app feel noticeably different from 
+      a standard school coding tool (Scratch, code.org)?
+      Specifically: does it feel more like a game 
+      than a classroom? 
+      List the top 3 things that currently make it 
+      feel most like a classroom tool rather than a game,
+      and the top 3 things that already make it feel 
+      like a game.
+
+10.12 After a correct answer, how long does the 
+      celebration last before the next step loads?
+      It should be 1.2 seconds minimum — enough to 
+      feel the win. Less than 1.2s: the win is invisible.
+      More than 2s: the pacing feels slow.
+      Report the actual delay.
+
+══════════════════════════════════
+DELIVER YOUR AUDIT AS A TABLE
+══════════════════════════════════
+
+Format:
+Item | Status | Fix needed
+-----|--------|----------
+1.1  | PASS   | —
+1.2  | FAIL   | Add rawCode param to validate()
+
+Every item must have a status. No skips.
+Flag any FAIL in Sections 7, 8, 9, or 10 as 
+DEMO BLOCKER if it would visibly hurt the BRL pitch.
+
+Totals at the bottom:
+PASS: N
+FAIL: N  
+PARTIAL: N
+DEMO BLOCKERS: N

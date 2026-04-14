@@ -1,0 +1,1739 @@
+# CODE4KIDZ — REPLIT AGENT PROMPT
+# Senior Engineer Build Spec — Phase 2
+# Lessons 3–6 + Full Byte Animation System
+# Project Manager: Acting as PM with zero ambiguity.
+# Version: 2.0 | April 2026
+
+---
+
+## WHO YOU ARE
+
+You are a senior React/TypeScript engineer with 10 years of experience
+building consumer-facing gamified learning products. You have shipped
+Framer Motion animation systems at scale. You write clean, typed,
+maintainable code. You do not improvise copy. You do not skip specs.
+You build exactly what the PM describes — no more, no less.
+
+---
+
+## WHAT EXISTS RIGHT NOW (DO NOT REBUILD THIS)
+
+The following is already working in the codebase:
+- gameStore.ts with topicName, xp, hearts, streak, mistakeLog, mascotMood
+- Lesson 1 complete (all 5 steps with validators, topicName injected)
+- Lesson 2 complete (warm-up + 5 steps with validators, topicName injected)
+- OnboardingPage.tsx (4 screens, topic capture)
+- MapPage.tsx (skill tree, 10 nodes)
+- LessonPage.tsx (3-panel: lesson panel / editor / preview)
+- ReviewPage.tsx (post-lesson mistake redo)
+- CompletePage.tsx (confetti + celebration)
+- Byte SVG already renders and blinks
+
+DO NOT touch any of the above unless this spec explicitly says to modify it.
+
+---
+
+## WHAT YOU ARE BUILDING IN THIS PROMPT
+
+### PART 1 — BYTE FULL ANIMATION SYSTEM
+Byte currently blinks. That is 5% of what Byte should do.
+Build the complete Byte animation layer described below.
+
+### PART 2 — LESSONS 3, 4, 5, 6
+Full lesson data objects + all validators + topicName injection.
+4 complete lessons, production-ready.
+
+### PART 3 — MICRO-INTERACTION LAYER
+The app needs to feel ALIVE at all times.
+Idle states, reactive feedback, celebration physics —
+every described interaction below must be implemented.
+
+---
+
+# ═══════════════════════════════════════════════════════════
+# PART 1 — BYTE FULL ANIMATION SYSTEM
+# ═══════════════════════════════════════════════════════════
+
+## WHY THIS MATTERS
+
+Duo the Duolingo owl has a 40-person animation team.
+We have one SVG and Framer Motion.
+But Byte needs to feel like a character, not a logo.
+The difference between "it blinks" and "it feels alive"
+is: continuous motion, reactive motion, and unpredictable motion.
+All three are achievable with what we have.
+
+---
+
+## BYTE ANIMATION ARCHITECTURE
+
+Create a dedicated animation controller:
+src/components/Byte/ByteAnimator.tsx
+
+This component wraps the SVG and owns ALL animation logic.
+LessonPanel just passes `mood` and `isActive` props.
+ByteAnimator decides what Byte does based on those props.
+
+```typescript
+// src/components/Byte/ByteAnimator.tsx
+
+interface ByteAnimatorProps {
+  mood: 'idle' | 'cheer' | 'think' | 'sad' | 'story'
+  isTyping: boolean      // true when editor has changed in last 2s
+  isStuck: boolean       // true when kid has been on same step 20+ sec without typing
+  justPassed: boolean    // true for 2s after validator returns pass
+  justFailed: boolean    // true for 1s after validator returns fail
+}
+```
+
+---
+
+## THE 5 CONTINUOUS BODY ANIMATIONS
+### (These loop forever — Byte is NEVER completely still)
+
+Build these as Framer Motion `animate` props on the main SVG wrapper `<motion.div>`.
+Each mood has its own continuous loop. Use `transition: { repeat: Infinity }`.
+
+```
+IDLE BODY LOOP:
+  y: [0, -5, 0]
+  transition: duration 3.5s, ease "easeInOut", repeat Infinity
+  → Very gentle float. Subtle. Like breathing.
+  → Also: rotate: [0, 0.8, 0, -0.8, 0], duration 5s
+    (Byte sways slightly left and right, very slow)
+
+THINK BODY LOOP:
+  y: [0, -3, 0]
+  transition: duration 2s, ease "easeInOut", repeat Infinity
+  rotate: [0, -2, -2, -2, 0]
+  transition: duration 1.5s, then hold at -2 degrees for 4s, then return
+  → Byte tilts head to one side and holds it while thinking
+
+CHEER BODY LOOP (triggered on justPassed):
+  y: [0, -18, -4, -14, 0]
+  transition: duration 0.7s, ease [0.2, 0.8, 0.4, 1.2] (bouncy spring)
+  → Byte JUMPS. Not a float. A real jump.
+  → After 3 jumps: settles back to idle loop
+  → Scale: [1, 1.1, 1] during jump peak
+
+SAD BODY LOOP:
+  y: [0, 3, 0]
+  transition: duration 4s, ease "easeInOut", repeat Infinity
+  rotate: [0, 1, 0, -1, 0], duration 6s
+  → Byte droops slowly. Heavy. Low energy.
+  → Opposite energy of cheer.
+
+STORY BODY LOOP:
+  y: [0, -4, 0]
+  transition: duration 2.5s, ease "easeInOut", repeat Infinity
+  → Same gentleness as idle but slightly faster
+  → Byte leans forward: rotate: [0, -3, 0], duration 3s, repeat Infinity
+    (Byte leans toward the kid as if sharing a secret)
+```
+
+---
+
+## THE EYE SYSTEM
+### (The most expressive part of Byte)
+
+Byte's SVG has two circular eyes. Each eye has:
+- An outer circle (the "white" of the eye)
+- An inner circle (the "pupil")
+- An eyelid (a rectangle that drops from above to cover the eye)
+
+```
+BLINK (already exists — keep it):
+  Eyelid height: 0% → 100% → 0%
+  Duration: 0.15s close, 0.08s hold, 0.15s open
+  Frequency: every 3-5 seconds (randomized)
+
+ADD: DOUBLE BLINK (surprised reaction):
+  Two blinks in rapid succession: close-open-close-open
+  Total duration: 0.7s
+  Trigger: when justFailed becomes true
+
+ADD: SLOW BLINK (thinking):
+  Eyelid height: 0% → 70% → 70% → 0%
+  Duration: 0.3s close, 1.2s hold half-closed, 0.3s open
+  Frequency: every 6-8s during think mood
+  → Byte looks like they are really concentrating
+
+ADD: HAPPY SQUINT (joy):
+  Eyes squint to 30% height (not fully closed)
+  Hold for 0.8s at peak of each cheer jump
+  → The "scrunching up face when happy" expression
+
+ADD: PUPIL TRACKING:
+  The inner pupil circle moves slightly based on mouse position.
+  Max movement: 3px in any direction from center.
+  Smoothed with lerp (linear interpolation) — not instant.
+  Update on mousemove on the lesson panel div.
+  → Byte's eyes follow the kid's cursor. Subtle. Magical.
+  → Disable during sad mood (pupil stays centered, looking down slightly)
+
+ADD: WIDE EYES (excitement):
+  On lesson load (first time):
+    Eye circles scale: 1.0 → 1.3 → 1.0
+    Duration: 0.4s
+    → Byte opens eyes wide in excitement as lesson starts
+
+ADD: EYEBROW RAISE:
+  Byte has two small arc shapes above the eyes (eyebrows).
+  On cheer: eyebrows move UP 4px, duration 0.3s
+  On sad: inner ends of eyebrows move DOWN 2px (worried expression)
+  On think: one eyebrow (right) moves UP 3px (skeptical/curious look)
+```
+
+---
+
+## THE ARM SYSTEM
+### (Byte has two small arms — currently static)
+
+```
+IDLE ARMS:
+  Subtle sway matching body:
+  Left arm: rotate -3 → 3 → -3, duration 4s, offset 0.5s from body
+  Right arm: rotate 3 → -3 → 3, duration 4s, offset 1s from body
+
+CHEER ARMS:
+  Both arms shoot UP on jump:
+  rotate: [0, -140, -140, 0] (left arm)
+  rotate: [0, 140, 140, 0]   (right arm)
+  Synced with jump timing
+  → Byte throws hands up in celebration
+
+SAD ARMS:
+  Both arms hang slightly lower than normal:
+  rotate: [0, 15, 15], hold
+  → Drooped arms
+
+THINK ARM:
+  Right arm: moves up slowly to "chin" position
+  rotate: [0, -30, -30], hold at -30 for duration of think mood
+  → The classic "hand on chin" thinking pose
+
+WAVE ARM (special — on lesson load):
+  Right arm waves side to side 3 times
+  rotate: [0, -60, -20, -60, -20, -60, 0]
+  duration: 1.5s total
+  → Byte waves hello when lesson starts
+```
+
+---
+
+## REACTIVE MOMENTS
+### (One-shot animations triggered by events — not loops)
+
+```
+ON CORRECT ANSWER (justPassed = true):
+  Sequence:
+  1. JUMP (y: 0 → -20 → 0, 0.5s, spring)
+  2. STAR BURST: 6-8 small yellow/gold circles emit from Byte's center
+     Each circle: scale 0 → 1, then moves outward 40-80px in a random direction
+     then opacity 1 → 0, total duration 0.8s
+     Use Framer Motion with custom variants per particle
+  3. HAPPY SQUINT eyes during jump peak
+  4. ARMS UP
+  5. After landing: 2 more smaller bounces (y: 0 → -8 → 0, 0.3s each)
+
+ON WRONG ANSWER (justFailed = true):
+  Sequence:
+  1. SHAKE: x: [0, -8, 8, -6, 6, -4, 4, 0], duration 0.5s
+  2. DOUBLE BLINK
+  3. Small "puff" effect: a cloud shape appears briefly (opacity 0 → 0.6 → 0)
+     positioned above Byte's head, scale 0.5 → 1.2, duration 0.6s
+  4. Settle into think pose
+
+ON HINT REVEALED:
+  1. Byte tilts toward the kid (rotate: -8 degrees, 0.4s ease)
+  2. A small lightbulb "💡" appears above Byte's head
+     Framer Motion: scale 0 → 1.2 → 1.0, y: -10 → -20, duration 0.5s
+  3. Byte holds the tilt for 3 seconds then returns to idle
+
+ON HEART LOST:
+  1. Byte turns briefly RED (CSS filter: hue-rotate + saturate)
+     Duration: 0.3s red → 0.5s fade back to normal
+  2. SAD drop: y: 0 → 8 → 0, 0.8s ease-in-out
+  3. Eyes do the worried eyebrow look
+  4. Byte settles into sad pose
+
+ON LESSON START (first load):
+  1. Byte enters from bottom: y: 80 → 0, opacity 0 → 1
+     Duration: 0.6s, spring (stiffness: 100, damping: 15)
+  2. WAVE arm sequence
+  3. WIDE EYES moment
+  4. Then idle loop begins
+
+ON STREAK MILESTONE (3-day or 7-day):
+  1. Byte does the cheer jump 3 times in succession
+  2. Fire emoji "🔥" appears and floats up from beside Byte
+     opacity 1 → 0, y: 0 → -40, duration 1.5s
+  3. Extra star burst, larger than normal pass
+
+ON LESSON COMPLETE (navigating to CompletePage):
+  Before navigation (on the lesson page):
+  1. Byte does 3 full jumps
+  2. Star burst (large version — 12 particles)
+  3. After 1.5s: page transition begins
+```
+
+---
+
+## THE SPEECH BUBBLE SYSTEM
+### (Byte has a speech bubble — it needs to feel like speech, not text)
+
+```
+CURRENTLY: Text appears all at once. This feels like a label, not a voice.
+
+CHANGE: All Byte messages now use a TYPEWRITER EFFECT.
+  Characters appear one by one at 28ms per character.
+  Punctuation (. ! ?) pauses for 200ms before continuing.
+  Line breaks pause for 150ms.
+  
+  This makes Byte feel like they are actually talking.
+
+BUBBLE ENTRANCE:
+  scale: 0.8 → 1.0, opacity 0 → 1
+  transform-origin: bottom-left (bubble points toward Byte)
+  duration: 0.25s ease-out
+
+BUBBLE EXIT (when message changes):
+  opacity 1 → 0, y: 0 → -4
+  duration: 0.2s
+  Then new bubble enters
+
+BUBBLE SHAKE (emphasis):
+  On words in ALL CAPS in the message:
+  The bubble does a quick shake: x: [0, -3, 3, -2, 2, 0]
+  Duration: 0.3s
+  → When Byte says "YOU DID IT!" the bubble physically reacts
+
+BUBBLE COLORS BY MOOD:
+  idle:  white background, purple border-left 3px
+  cheer: #D6F5E8 (greenL) background, green border-left 4px
+  think: #FEF0D6 (orangeL) background, orange border-left 3px
+  sad:   #FDECE6 (redL) background, red border-left 3px
+  story: #FAE8F3 (pinkL) background, pink border-left 4px, "Byte's story" label top
+```
+
+---
+
+## THE LESSON PANEL AMBIENT ANIMATIONS
+### (Background of the lesson panel — makes the whole left column feel alive)
+
+```
+PARTICLE SYSTEM (subtle, background):
+  3-5 small colored dots float slowly upward in the lesson panel background
+  Each dot: 4-8px diameter, opacity 0.15-0.25, color matches current lesson path
+    Path 1 (lessons 1-3): purple tones
+    Path 2 (lessons 4-5): orange tones
+    Path 3 (lessons 6-7): teal tones
+    Path 4 (lessons 8-10): green tones
+  Each dot:
+    starts at a random x position at bottom of panel
+    floats upward (y: panel-height → 0) over 8-12 seconds
+    fades in at bottom, fades out at top
+    randomized start delay so they are not synchronized
+  This is CSS animation (not Framer Motion) for performance.
+  Use @keyframes floatUp with translateY and opacity.
+
+STEP PROGRESS BAR (existing — animate the transitions):
+  When advancing to next step:
+    Completed dot: scale 1 → 1.4 → 1.0, color transitions to green
+    Duration: 0.4s spring
+    New current dot: scale 0.6 → 1.0, color becomes orange/pulse
+    
+HINT BUTTON REVEAL:
+  Currently: appears suddenly
+  Change: slide up from below panel
+    y: 20 → 0, opacity 0 → 1, duration 0.4s ease-out
+  ALSO: the button itself pulses gently after appearing:
+    box-shadow cycles: 0 0 0 0 rgba(212,88,26,0.4) → 0 0 0 8px rgba(212,88,26,0)
+    duration 1.5s, repeat Infinity
+    → Classic "attention pulse" — draws the eye without being annoying
+```
+
+---
+
+## XP POP ANIMATION (enhance existing)
+
+```
+CURRENTLY: Number floats up and fades. Keep this.
+
+ADD: XP TRAIL
+  As the number floats up, leave 2 trailing smaller copies:
+  First trail: 60% opacity, 0.1s behind
+  Second trail: 30% opacity, 0.2s behind
+  All fade out together at top
+
+ADD: STAR SPRAY on large XP gains (50+ XP):
+  3 small ⭐ emojis spray outward from the counter
+  Each: random angle 0-360, distance 30-60px
+  scale: 0 → 1 → 0, duration 0.8s
+  opacity: 1 → 0
+
+ADD: COUNTER GLOW on any XP gain:
+  The XP counter briefly glows orange
+  box-shadow: 0 0 12px rgba(212,88,26,0.6) → none
+  duration: 0.8s
+```
+
+---
+
+## HEART LOSS ANIMATION (enhance existing)
+
+```
+CURRENTLY: Heart turns gray with shake. Keep this.
+
+ADD: CRACK EFFECT on the heart being lost:
+  A small crack SVG overlay appears on the heart for 0.5s
+  then fades as the heart turns gray
+  (Simple SVG: two diagonal lines crossing, opacity 0 → 0.8 → 0)
+
+ADD: SCREEN FLASH on zero hearts:
+  Full viewport overlay: background red, opacity 0 → 0.15 → 0
+  Duration: 0.6s
+  → Subtle but communicates "something significant happened"
+  → Only on ZERO hearts, not on each loss
+
+ADD: HEART REFILL ANIMATION (between lessons):
+  On refillHearts() call:
+  Hearts fill one by one with a 200ms stagger
+  Each: scale 0.5 → 1.2 → 1.0 with color transition gray → red
+  duration: 0.4s per heart
+```
+
+---
+
+## EDITOR MICRO-INTERACTIONS
+
+```
+ADD: TYPING INDICATOR in lesson panel:
+  When isTyping is true:
+  A small "typing" indicator appears below Byte (3 dots bouncing)
+  The dots pulse: opacity 0.4 → 1.0 → 0.4, staggered 0.2s apart
+  Label: "Byte is watching..." in 11px muted
+  → Communicates the live connection between editor and Byte
+
+ADD: PREVIEW SUCCESS FLASH:
+  When validator returns 'pass':
+  The preview iframe border briefly turns green:
+  border: 2px solid transparent → 2px solid #1A7A4E → transparent
+  duration: 1.5s
+  → Visual confirmation that the PREVIEW passed, not just the code
+
+ADD: PREVIEW FAIL PULSE:
+  When code has been invalid for 2+ seconds:
+  Preview iframe border pulses subtly red:
+  border: 1px solid #DEDCD7 → 1px solid #B33A1C → back
+  Duration: 1s, 2 pulses only (not infinite — not annoying)
+
+ADD: LINE HIGHLIGHT on validation:
+  When validator fails:
+  Attempt to highlight the line most likely to contain the error.
+  Strategy: if the failing validator is querySelector('h1') and
+  there is no h1 in the code, highlight any line containing an h tag
+  with a yellow background in CodeMirror.
+  This is approximate — not precise LSP-level error detection.
+  Use CodeMirror's Decoration API.
+```
+
+---
+
+# ═══════════════════════════════════════════════════════════
+# PART 2 — LESSONS 3, 4, 5, 6 — COMPLETE DATA
+# ═══════════════════════════════════════════════════════════
+
+## CRITICAL RULES (READ BEFORE WRITING ANY LESSON CODE)
+
+1. topicName is injected into EVERY instruction string.
+   Use a template function: `(topic: string) => \`...\``
+   Every instruction references the kid's topic.
+
+2. startingCode after Step 2 of every lesson ALWAYS contains the topic.
+   The kid's topic appears pre-filled. They are building THEIR thing.
+
+3. Validators NEVER check for the topic name.
+   We check for HTML structure, not content.
+   A kid who writes <h1>I love pizza more than Minecraft</h1> should pass.
+
+4. Every hint is a nudge, not an answer.
+   Byte points the kid toward the solution. Never gives it.
+
+5. Step types ROTATE:
+   Step 1: write (from scratch)
+   Step 2: write/personalize (topic-specific)
+   Step 3: identify (read and recognize)
+   Step 4: fix (broken code to repair)
+   Step 5: combine (use this lesson + a previous lesson)
+
+---
+
+## LESSON 3 — "Write Your Story"
+
+```typescript
+// src/data/lessons/lesson-03.ts
+
+export const lesson03 = {
+  id: 'lesson-03',
+  lessonNumber: 3,
+  title: 'Write Your Story',
+  emoji: '📝',
+  xpReward: 50,
+
+  byteIntro: (topic: string) =>
+    `A heading tells people WHAT the page is about.\n` +
+    `A paragraph tells them the STORY.\n` +
+    `Let us make your ${topic} page say something AMAZING.`,
+
+  byteStoryMoment:
+    `When I first learned about paragraphs I wrote one sentence ` +
+    `that went on for forty words with no punctuation ` +
+    `because I thought that was how computers read things.\n` +
+    `It was not.`,
+
+  celebrationQuote: (topic: string) =>
+    `THREE paragraphs about ${topic}!\n` +
+    `Your page has real content that real people could read.\n` +
+    `You are a writer AND a coder.`,
+
+  steps: [
+    // ── WARM-UP: Review h1 + h2 from Lesson 2 ──────────────────
+    {
+      id: 'warmup',
+      type: 'warmup',
+      instruction: (topic: string) =>
+        `Quick warm-up — 60 seconds, no pressure!\n\n` +
+        `Add an h1 about ${topic} and an h2 below it.\n` +
+        `You already know how to do this from Lesson 2.`,
+      bytePrompt: (topic: string) =>
+        `Show me you remember headings!\n` +
+        `One h1 about ${topic}, one h2 below it.\n` +
+        `Go ahead — this is easy for you now.`,
+      hint: `An h1 is your biggest heading. An h2 is smaller.\n` +
+            `<h1>Main title</h1>\n` +
+            `<h2>Subtitle here</h2>`,
+      startingCode: '',
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelector('h1') !== null &&
+        doc.querySelector('h2') !== null,
+    },
+
+    // ── STEP 1: WRITE — First paragraph ────────────────────────
+    {
+      id: 'step-1',
+      type: 'write',
+      instruction: (topic: string) =>
+        `A paragraph is where you write actual sentences.\n\n` +
+        `Below your headings, type:\n` +
+        `<p>One sentence about ${topic} here.</p>\n\n` +
+        `Write YOUR sentence — something true about ${topic}!`,
+      bytePrompt: (topic: string) =>
+        `The p tag is for paragraphs — real sentences people read.\n` +
+        `Every article, every Wikipedia entry, every blog post\n` +
+        `is made of p tags.\n` +
+        `Tell me something true about ${topic}.`,
+      hint: `A paragraph opens with <p> and closes with </p>.\n` +
+            `Everything between those two tags is what people read.\n` +
+            `Example: <p>This is my sentence.</p>`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head><title>${topic}</title></head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <h2>Why I love it</h2>\n` +
+        `    \n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelector('p') !== null &&
+        (doc.querySelector('p')?.textContent?.length ?? 0) > 0,
+    },
+
+    // ── STEP 2: PERSONALIZE — Second paragraph ──────────────────
+    {
+      id: 'step-2',
+      type: 'write',
+      instruction: (topic: string) =>
+        `Good! Now add a SECOND paragraph.\n\n` +
+        `This one: write a fact about ${topic} that most people don't know.\n\n` +
+        `Add another <p>...</p> below your first one.`,
+      bytePrompt: (topic: string) =>
+        `Two paragraphs means more information for your readers.\n` +
+        `What is something interesting about ${topic}\n` +
+        `that would surprise someone?`,
+      hint: `Just add another p tag below the first one:\n` +
+            `<p>First paragraph.</p>\n` +
+            `<p>Second paragraph here.</p>`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head><title>${topic}</title></head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <h2>Why I love it</h2>\n` +
+        `    <p>Your first sentence about ${topic}.</p>\n` +
+        `    \n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelectorAll('p').length >= 2,
+    },
+
+    // ── STEP 3: IDENTIFY — Three paragraphs tell a story ────────
+    {
+      id: 'step-3',
+      type: 'identify',
+      instruction: (topic: string) =>
+        `Now add a THIRD paragraph to complete the story.\n\n` +
+        `Think of your three paragraphs like this:\n` +
+        `• Paragraph 1: Introduce ${topic}\n` +
+        `• Paragraph 2: A cool fact about ${topic}\n` +
+        `• Paragraph 3: Why ${topic} matters to YOU\n\n` +
+        `Add that third paragraph now!`,
+      bytePrompt: (topic: string) =>
+        `Three paragraphs tell a story: beginning, middle, end.\n` +
+        `Every article you have ever read does this.\n` +
+        `What does ${topic} mean to YOU? That is paragraph 3.`,
+      hint: `Add one more paragraph — your third and final one:\n` +
+            `<p>Third paragraph here — personal and real.</p>`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head><title>${topic}</title></head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <h2>Why I love it</h2>\n` +
+        `    <p>First fact about ${topic}.</p>\n` +
+        `    <p>Something surprising about ${topic}.</p>\n` +
+        `    \n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelectorAll('p').length >= 3,
+    },
+
+    // ── STEP 4: FIX — Missing closing </p> tag ──────────────────
+    {
+      id: 'step-4',
+      type: 'fix',
+      instruction: () =>
+        `Byte's code has a bug! One paragraph is not closed properly.\n\n` +
+        `Find the missing closing tag and fix it.\n` +
+        `The preview looks broken — that is your clue!`,
+      bytePrompt: () =>
+        `Ugh — I did it again. I forgot to close a tag.\n` +
+        `Look at the paragraph tags carefully.\n` +
+        `Every <p> needs a </p> to close it.\n` +
+        `Which one is missing its partner?`,
+      hint: `A paragraph needs two tags: one to open, one to close.\n` +
+            `Open: <p>   Close: </p>\n` +
+            `The closing tag has a forward slash /\n` +
+            `Find the paragraph that is missing its </p>`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head><title>${topic}</title></head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <p>This is the first fact about ${topic}.</p>\n` +
+        `    <p>This is something surprising.\n` +
+        `    <p>And this is why it matters to me.</p>\n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelectorAll('p').length >= 3,
+    },
+
+    // ── STEP 5: COMBINE — Headings + paragraphs together ────────
+    {
+      id: 'step-5',
+      type: 'combine',
+      instruction: (topic: string) =>
+        `Final step! Build the FULL page now.\n\n` +
+        `Your ${topic} page should have:\n` +
+        `✓ An h1 with your topic\n` +
+        `✓ An h2 as a subtitle\n` +
+        `✓ At least 3 paragraphs\n\n` +
+        `Check the preview. Does it look like a real page about ${topic}?\n` +
+        `If it does — you are done!`,
+      bytePrompt: (topic: string) =>
+        `This is the first time your page has BOTH headings AND paragraphs.\n` +
+        `That is the structure of every real website.\n` +
+        `Look at your preview. That is YOUR ${topic} page.\n` +
+        `A real page. On a real browser.`,
+      hint: `Make sure you have:\n` +
+            `1. An h1 tag\n` +
+            `2. An h2 tag\n` +
+            `3. Three or more p tags\n` +
+            `All inside the body. All properly opened and closed.`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head><title>${topic}</title></head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <h2>My favorite thing</h2>\n` +
+        `    <p>Write your first sentence here.</p>\n` +
+        `    <p>Write a fact here.</p>\n` +
+        `    <p>Write why it matters to you here.</p>\n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelector('h1') !== null &&
+        doc.querySelector('h2') !== null &&
+        doc.querySelectorAll('p').length >= 3,
+    },
+  ],
+}
+```
+
+---
+
+## LESSON 4 — "Paint With Colors!"
+
+```typescript
+// src/data/lessons/lesson-04.ts
+
+export const lesson04 = {
+  id: 'lesson-04',
+  lessonNumber: 4,
+  title: 'Paint With Colors!',
+  emoji: '🎨',
+  xpReward: 50,
+
+  byteIntro: (topic: string) =>
+    `Your ${topic} page has structure.\n` +
+    `Now let us give it a VIBE.\n` +
+    `What colors FEEL like ${topic}?\n` +
+    `Because you get to choose — and there are 16 MILLION options.`,
+
+  byteStoryMoment:
+    `My first CSS experiment turned my entire page completely black.\n` +
+    `Not on purpose.\n` +
+    `I typed background-color: black just to see what would happen.\n` +
+    `Now I know. Now YOU know too.`,
+
+  celebrationQuote: (topic: string) =>
+    `Your ${topic} page has a VIBE now!\n` +
+    `Graphic designers spend entire careers choosing colors.\n` +
+    `You just became a color designer in 5 minutes.`,
+
+  steps: [
+    // ── WARM-UP: Review 3 paragraphs from Lesson 3 ─────────────
+    {
+      id: 'warmup',
+      type: 'warmup',
+      instruction: (topic: string) =>
+        `Warm-up — 60 seconds!\n\n` +
+        `Write three p tags — each one a sentence about ${topic}.\n` +
+        `No colors yet. Just three paragraphs.\n` +
+        `You have done this. Show me.`,
+      bytePrompt: (topic: string) =>
+        `Before we paint — let us make sure the canvas is ready.\n` +
+        `Three paragraphs about ${topic}. Go!`,
+      hint: `Three p tags:\n` +
+            `<p>Sentence one.</p>\n` +
+            `<p>Sentence two.</p>\n` +
+            `<p>Sentence three.</p>`,
+      startingCode: '',
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelectorAll('p').length >= 3,
+    },
+
+    // ── STEP 1: WRITE — Add the style tag ──────────────────────
+    {
+      id: 'step-1',
+      type: 'write',
+      instruction: () =>
+        `CSS lives in a special tag called style.\n\n` +
+        `Add this inside your <head> tags:\n\n` +
+        `<style>\n` +
+        `\n` +
+        `</style>\n\n` +
+        `This is where all your colors will go.`,
+      bytePrompt: () =>
+        `CSS is a completely different language from HTML.\n` +
+        `HTML says what things ARE.\n` +
+        `CSS says what things LOOK LIKE.\n` +
+        `The style tag is where CSS lives.`,
+      hint: `The style tag goes INSIDE your head section:\n` +
+            `<head>\n` +
+            `  <title>My Page</title>\n` +
+            `  <style>\n` +
+            `  </style>\n` +
+            `</head>`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head>\n` +
+        `    <title>${topic}</title>\n` +
+        `    \n` +
+        `  </head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <p>Something about ${topic}.</p>\n` +
+        `    <p>A fact about ${topic}.</p>\n` +
+        `    <p>Why ${topic} matters to me.</p>\n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelector('style') !== null,
+    },
+
+    // ── STEP 2: PERSONALIZE — Color the h1 ─────────────────────
+    {
+      id: 'step-2',
+      type: 'write',
+      instruction: (topic: string) =>
+        `Now make your heading a color that FEELS like ${topic}!\n\n` +
+        `Inside your style tags, type:\n` +
+        `h1 {\n` +
+        `  color: hotpink;\n` +
+        `}\n\n` +
+        `Change "hotpink" to ANY color you want.\n` +
+        `Try: red, blue, gold, coral, purple, orange...`,
+      bytePrompt: (topic: string) =>
+        `What color is ${topic} in your mind?\n` +
+        `Give that color to your h1 heading.\n` +
+        `CSS uses a colon between the property and the value.\n` +
+        `color: [color name];`,
+      hint: `CSS looks like this:\n` +
+            `h1 {\n` +
+            `  color: red;\n` +
+            `}\n` +
+            `The part before the colon is the PROPERTY.\n` +
+            `The part after is the VALUE. It ends with a semicolon ;`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head>\n` +
+        `    <title>${topic}</title>\n` +
+        `    <style>\n` +
+        `      \n` +
+        `    </style>\n` +
+        `  </head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <p>Something about ${topic}.</p>\n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) => {
+        const h1 = doc.querySelector('h1')
+        if (!h1) return false
+        const color = window.getComputedStyle(h1).color
+        return color !== 'rgb(0, 0, 0)' && color !== ''
+      },
+    },
+
+    // ── STEP 3: IDENTIFY — Background color ─────────────────────
+    {
+      id: 'step-3',
+      type: 'identify',
+      instruction: (topic: string) =>
+        `Now change the page background color!\n\n` +
+        `Inside your style, add:\n` +
+        `body {\n` +
+        `  background-color: lightyellow;\n` +
+        `}\n\n` +
+        `Change "lightyellow" to a color that fits ${topic}.\n` +
+        `Watch the whole page change in the preview!`,
+      bytePrompt: () =>
+        `background-color changes the color BEHIND everything.\n` +
+        `The entire page background.\n` +
+        `Pick something that makes your h1 color pop.\n` +
+        `Contrast is the secret of good design.`,
+      hint: `Add this inside your style tags:\n` +
+            `body {\n` +
+            `  background-color: lightyellow;\n` +
+            `}\n` +
+            `"body" selects the entire page.\n` +
+            `"background-color" is the property.\n` +
+            `The color name goes after the colon.`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head>\n` +
+        `    <title>${topic}</title>\n` +
+        `    <style>\n` +
+        `      h1 {\n` +
+        `        color: purple;\n` +
+        `      }\n` +
+        `      \n` +
+        `    </style>\n` +
+        `  </head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <p>Something about ${topic}.</p>\n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) => {
+        const bg = window.getComputedStyle(doc.body).backgroundColor
+        return bg !== 'rgba(0, 0, 0, 0)' && bg !== 'rgb(255, 255, 255)' && bg !== ''
+      },
+    },
+
+    // ── STEP 4: FIX — Missing colon in CSS ──────────────────────
+    {
+      id: 'step-4',
+      type: 'fix',
+      instruction: () =>
+        `Byte's CSS is broken! The color is not showing up.\n\n` +
+        `Find the mistake and fix it.\n` +
+        `Clue: CSS properties always need a colon between the name and the value.`,
+      bytePrompt: () =>
+        `I wrote this CSS and it does not work.\n` +
+        `Can you see what I did wrong?\n` +
+        `Every CSS rule needs a colon between the property and the value.\n` +
+        `color: red — see the colon? Find where mine is missing.`,
+      hint: `CSS always looks like this:\n` +
+            `property: value;\n` +
+            `The COLON goes between the property name and the value.\n` +
+            `Without it, the browser ignores the rule completely.`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head>\n` +
+        `    <title>${topic}</title>\n` +
+        `    <style>\n` +
+        `      h1 {\n` +
+        `        color purple;\n` +
+        `      }\n` +
+        `      body {\n` +
+        `        background-color: lightyellow;\n` +
+        `      }\n` +
+        `    </style>\n` +
+        `  </head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <p>Something about ${topic}.</p>\n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) => {
+        const h1 = doc.querySelector('h1')
+        if (!h1) return false
+        const color = window.getComputedStyle(h1).color
+        return color !== 'rgb(0, 0, 0)'
+      },
+    },
+
+    // ── STEP 5: COMBINE — Color h1, h2, p all differently ───────
+    {
+      id: 'step-5',
+      type: 'combine',
+      instruction: (topic: string) =>
+        `Final step — build your ${topic} color palette!\n\n` +
+        `Give h1, h2, and p each a different color.\n` +
+        `Also keep your background-color.\n\n` +
+        `You choose the colors. Make it feel like ${topic}.`,
+      bytePrompt: (topic: string) =>
+        `This is where your page starts to have a personality.\n` +
+        `Three elements. Three colors. One vibe.\n` +
+        `What does ${topic} look like as a color palette?\n` +
+        `Go wild. You can always change it.`,
+      hint: `Add separate CSS rules for each element:\n` +
+            `h1 { color: purple; }\n` +
+            `h2 { color: orange; }\n` +
+            `p { color: darkblue; }\n` +
+            `Each rule targets a different element.`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head>\n` +
+        `    <title>${topic}</title>\n` +
+        `    <style>\n` +
+        `      body {\n` +
+        `        background-color: lightyellow;\n` +
+        `      }\n` +
+        `      h1 {\n` +
+        `        color: purple;\n` +
+        `      }\n` +
+        `      /* Add h2 and p colors below */\n` +
+        `      \n` +
+        `    </style>\n` +
+        `  </head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <h2>Why it is amazing</h2>\n` +
+        `    <p>Your paragraph about ${topic}.</p>\n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) => {
+        const body = doc.body
+        const h1 = doc.querySelector('h1')
+        const hasBackground = window.getComputedStyle(body).backgroundColor !== 'rgba(0, 0, 0, 0)'
+        const hasColor = h1 && window.getComputedStyle(h1).color !== 'rgb(0, 0, 0)'
+        return hasBackground && !!hasColor
+      },
+    },
+  ],
+}
+```
+
+---
+
+## LESSON 5 — "Make a List of Things"
+
+```typescript
+// src/data/lessons/lesson-05.ts
+
+export const lesson05 = {
+  id: 'lesson-05',
+  lessonNumber: 5,
+  title: 'Make a List of Things',
+  emoji: '📋',
+  xpReward: 50,
+
+  byteIntro: (topic: string) =>
+    `What are the TOP 5 things about ${topic}?\n` +
+    `Or a collection of facts?\n` +
+    `LISTS are how you organize information on the web.\n` +
+    `And they are EVERYWHERE.`,
+
+  byteStoryMoment:
+    `I once made a list of 47 things I wanted to learn.\n` +
+    `I forgot the closing tags on almost all of them.\n` +
+    `The browser tried its best.\n` +
+    `It looked like modern art.`,
+
+  celebrationQuote: (topic: string) =>
+    `A nested list about ${topic}!\n` +
+    `That is the same structure Wikipedia uses\n` +
+    `to organize every article on the site.\n` +
+    `Seriously.`,
+
+  steps: [
+    // ── WARM-UP: Review CSS color from Lesson 4 ────────────────
+    {
+      id: 'warmup',
+      type: 'warmup',
+      instruction: (topic: string) =>
+        `Warm-up — 60 seconds!\n\n` +
+        `Give your h1 a color in CSS.\n` +
+        `One rule: h1 { color: [any color]; }\n\n` +
+        `Your ${topic} page. Your color choice.`,
+      bytePrompt: () =>
+        `CSS warm-up! One rule.\n` +
+        `h1 { color: anything you want; }\n` +
+        `Show me you remember how CSS works.`,
+      hint: `Add a style tag in the head, then:\n` +
+            `h1 {\n` +
+            `  color: red;\n` +
+            `}\n` +
+            `Change red to any color name you like.`,
+      startingCode: '',
+      xp: 10,
+      validate: (doc: Document) => {
+        const h1 = doc.querySelector('h1')
+        if (!h1) return false
+        return window.getComputedStyle(h1).color !== 'rgb(0, 0, 0)'
+      },
+    },
+
+    // ── STEP 1: WRITE — Unordered list ─────────────────────────
+    {
+      id: 'step-1',
+      type: 'write',
+      instruction: (topic: string) =>
+        `An unordered list gives you bullet points.\n\n` +
+        `Type this in your body:\n\n` +
+        `<ul>\n` +
+        `  <li>Thing 1 about ${topic}</li>\n` +
+        `  <li>Thing 2 about ${topic}</li>\n` +
+        `  <li>Thing 3 about ${topic}</li>\n` +
+        `</ul>\n\n` +
+        `Change the items to real things about ${topic}!`,
+      bytePrompt: (topic: string) =>
+        `ul stands for Unordered List — bullet points.\n` +
+        `li stands for List Item — each bullet.\n` +
+        `What are three things about ${topic} worth listing?`,
+      hint: `ul is the container, li is each item:\n` +
+            `<ul>\n` +
+            `  <li>First item</li>\n` +
+            `  <li>Second item</li>\n` +
+            `  <li>Third item</li>\n` +
+            `</ul>\n` +
+            `Make sure each li has a closing </li>`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head><title>${topic}</title></head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    \n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelector('ul') !== null &&
+        doc.querySelectorAll('li').length >= 3,
+    },
+
+    // ── STEP 2: WRITE — Numbered list ───────────────────────────
+    {
+      id: 'step-2',
+      type: 'write',
+      instruction: (topic: string) =>
+        `Now add a numbered list for your TOP 5!\n\n` +
+        `ol = Ordered List (numbered automatically)\n\n` +
+        `<ol>\n` +
+        `  <li>Best thing about ${topic}</li>\n` +
+        `  <li>Second best thing</li>\n` +
+        `  <li>Third best</li>\n` +
+        `  <li>Fourth</li>\n` +
+        `  <li>Fifth</li>\n` +
+        `</ol>`,
+      bytePrompt: (topic: string) =>
+        `ol is like ul but numbered.\n` +
+        `The browser counts for you — you just write the li items.\n` +
+        `Rank your top 5 things about ${topic}.\n` +
+        `Number 1 is the best. No pressure.`,
+      hint: `ol works exactly like ul but creates numbers:\n` +
+            `<ol>\n` +
+            `  <li>First (gets the number 1)</li>\n` +
+            `  <li>Second (gets the number 2)</li>\n` +
+            `</ol>\n` +
+            `You do not type the numbers — the browser does that!`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head><title>${topic}</title></head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <ul>\n` +
+        `      <li>One thing</li>\n` +
+        `      <li>Another thing</li>\n` +
+        `      <li>A third thing</li>\n` +
+        `    </ul>\n` +
+        `    \n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelector('ol') !== null &&
+        doc.querySelectorAll('ol li').length >= 3,
+    },
+
+    // ── STEP 3: IDENTIFY — Missing li tag ───────────────────────
+    {
+      id: 'step-3',
+      type: 'identify',
+      instruction: () =>
+        `Byte's list is broken. One item is not showing up.\n\n` +
+        `Find the missing tag and fix it.\n` +
+        `Clue: look at the list items carefully.`,
+      bytePrompt: () =>
+        `One of my list items is missing something.\n` +
+        `Look at each li tag.\n` +
+        `Every item needs both an opening tag AND a closing tag.\n` +
+        `Which one is incomplete?`,
+      hint: `Each list item needs:\n` +
+            `<li>Content here</li>\n` +
+            `Both the opening <li> AND the closing </li>\n` +
+            `The missing tag is probably a closing </li>`,
+      startingCode: (topic: string) =>
+        `<ul>\n` +
+        `  <li>First thing about ${topic}</li>\n` +
+        `  <li>Second thing about ${topic}\n` +
+        `  <li>Third thing about ${topic}</li>\n` +
+        `</ul>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelectorAll('li').length >= 3,
+    },
+
+    // ── STEP 4: COMBINE — Style the list with CSS ───────────────
+    {
+      id: 'step-4',
+      type: 'combine',
+      instruction: (topic: string) =>
+        `Lists can be styled too!\n\n` +
+        `Add a style tag and try these:\n\n` +
+        `li {\n` +
+        `  color: purple;\n` +
+        `}\n\n` +
+        `Make your ${topic} list look as good as it sounds!`,
+      bytePrompt: (topic: string) =>
+        `Everything in HTML can be styled with CSS.\n` +
+        `li is just another element — give it a color.\n` +
+        `Make your ${topic} list match the vibe of your page.`,
+      hint: `Use li as the CSS selector:\n` +
+            `li {\n` +
+            `  color: blue;\n` +
+            `}\n` +
+            `This affects ALL list items on the page.`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head>\n` +
+        `    <title>${topic}</title>\n` +
+        `    <style>\n` +
+        `      /* Style your list here */\n` +
+        `      \n` +
+        `    </style>\n` +
+        `  </head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <ul>\n` +
+        `      <li>First thing about ${topic}</li>\n` +
+        `      <li>Second thing about ${topic}</li>\n` +
+        `      <li>Third thing about ${topic}</li>\n` +
+        `    </ul>\n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) => {
+        const li = doc.querySelector('li')
+        if (!li) return false
+        return window.getComputedStyle(li).color !== 'rgb(0, 0, 0)'
+      },
+    },
+
+    // ── STEP 5: COMBINE — Nested list ───────────────────────────
+    {
+      id: 'step-5',
+      type: 'combine',
+      instruction: (topic: string) =>
+        `FINAL STEP — a list inside a list!\n\n` +
+        `Pick one item from your list.\n` +
+        `Add sub-items INSIDE that li:\n\n` +
+        `<li>Main item\n` +
+        `  <ul>\n` +
+        `    <li>Detail 1</li>\n` +
+        `    <li>Detail 2</li>\n` +
+        `  </ul>\n` +
+        `</li>\n\n` +
+        `This is called nesting. Real websites do this constantly.`,
+      bytePrompt: (topic: string) =>
+        `A list inside a list.\n` +
+        `Wikipedia does this. Amazon does this.\n` +
+        `Now you do this.\n` +
+        `Pick any item from your ${topic} list and add details to it.`,
+      hint: `Put a ul INSIDE one of your li tags:\n` +
+            `<li>Main item\n` +
+            `  <ul>\n` +
+            `    <li>Sub-item 1</li>\n` +
+            `    <li>Sub-item 2</li>\n` +
+            `  </ul>\n` +
+            `</li>\n` +
+            `Make sure the inner ul is BEFORE the closing </li>`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head><title>${topic}</title></head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <ul>\n` +
+        `      <li>First thing about ${topic}\n` +
+        `        <!-- Add a nested ul here -->\n` +
+        `      </li>\n` +
+        `      <li>Second thing about ${topic}</li>\n` +
+        `      <li>Third thing about ${topic}</li>\n` +
+        `    </ul>\n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) => {
+        const nestedUl = doc.querySelector('li ul') || doc.querySelector('li ol')
+        return nestedUl !== null
+      },
+    },
+  ],
+}
+```
+
+---
+
+## LESSON 6 — "Add a Picture!"
+
+```typescript
+// src/data/lessons/lesson-06.ts
+
+export const lesson06 = {
+  id: 'lesson-06',
+  lessonNumber: 6,
+  title: 'Add a Picture!',
+  emoji: '🖼️',
+  xpReward: 50,
+
+  byteIntro: (topic: string) =>
+    `Words are great.\n` +
+    `But a picture of ${topic}?\n` +
+    `NOW that is a webpage.\n` +
+    `Let us add an image and make this thing feel REAL.`,
+
+  byteStoryMoment:
+    `I spent an hour once staring at a tiny broken image icon.\n` +
+    `The tag was perfect. The URL pointed to a file I had deleted.\n` +
+    `One wrong character. One hour.\n` +
+    `This one we will get right.`,
+
+  celebrationQuote: (topic: string) =>
+    `Your ${topic} page has a PICTURE!\n` +
+    `Every photo on every news site,\n` +
+    `every product image on Amazon —\n` +
+    `it all works exactly like what you just did.`,
+
+  // PRE-APPROVED IMAGE URLS BY TOPIC
+  // These are free-to-use URLs from Wikimedia Commons and Unsplash
+  // displayed as suggestions when the kid reaches the image step
+  suggestedImages: {
+    default: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png',
+    minecraft: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/51/Minecraft_cover.png/220px-Minecraft_cover.png',
+    dogs: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/YellowLabradorLooking_new.jpg/1200px-YellowLabradorLooking_new.jpg',
+    space: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/GoldenGateBridge-001.jpg/1200px-GoldenGateBridge-001.jpg',
+    dinosaurs: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Diplodocus_carnegii_hatcher.jpg/1200px-Diplodocus_carnegii_hatcher.jpg',
+    pizza: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Eq_it-na_pizza-margherita_sep2005_sml.jpg/800px-Eq_it-na_pizza-margherita_sep2005_sml.jpg',
+    robots: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Kismet_robot_at_MIT_Museum.jpg/800px-Kismet_robot_at_MIT_Museum.jpg',
+  },
+
+  steps: [
+    // ── WARM-UP: Unordered list from Lesson 5 ──────────────────
+    {
+      id: 'warmup',
+      type: 'warmup',
+      instruction: (topic: string) =>
+        `Warm-up — 60 seconds!\n\n` +
+        `Make an unordered list of 3 things about ${topic}.\n` +
+        `ul tag with 3 li items inside.\n` +
+        `You have done this before. Quick!`,
+      bytePrompt: (topic: string) =>
+        `Lists warm-up!\n` +
+        `ul with three li items about ${topic}.\n` +
+        `Show me you have got it.`,
+      hint: `<ul>\n` +
+            `  <li>Thing 1</li>\n` +
+            `  <li>Thing 2</li>\n` +
+            `  <li>Thing 3</li>\n` +
+            `</ul>`,
+      startingCode: '',
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelector('ul') !== null &&
+        doc.querySelectorAll('li').length >= 3,
+    },
+
+    // ── STEP 1: WRITE — Add the img tag with src ────────────────
+    {
+      id: 'step-1',
+      type: 'write',
+      instruction: (topic: string) =>
+        `Images use a special tag: img\n\n` +
+        `Add this inside your body:\n` +
+        `<img src="IMAGE_URL_HERE">\n\n` +
+        `Replace IMAGE_URL_HERE with a real URL.\n\n` +
+        `Here is a free image URL you can use:\n` +
+        `https://picsum.photos/300/200\n\n` +
+        `(This gives you a random photo — perfect for now!)`,
+      bytePrompt: (topic: string) =>
+        `The img tag is different from other tags.\n` +
+        `It does not have a closing tag.\n` +
+        `It is a self-closing tag — just one tag does everything.\n` +
+        `The src attribute tells the browser WHERE the image lives.`,
+      hint: `The img tag looks like this:\n` +
+            `<img src="https://picsum.photos/300/200">\n` +
+            `No closing tag needed.\n` +
+            `The src must be a complete URL starting with https://`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head><title>${topic}</title></head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    \n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelector('img[src]') !== null,
+    },
+
+    // ── STEP 2: WRITE — Add alt text ────────────────────────────
+    {
+      id: 'step-2',
+      type: 'write',
+      instruction: (topic: string) =>
+        `Now add a description to your image.\n\n` +
+        `This is called alt text — it helps people who cannot see images.\n\n` +
+        `Update your img tag:\n` +
+        `<img src="YOUR_URL" alt="A picture of ${topic}">\n\n` +
+        `Describe what the image shows.`,
+      bytePrompt: (topic: string) =>
+        `Alt text is what a screen reader says out loud\n` +
+        `for someone who cannot see the image.\n` +
+        `It is also what shows when the image fails to load.\n` +
+        `Always add alt text. Always.\n` +
+        `Describe your ${topic} image.`,
+      hint: `Add alt inside the img tag:\n` +
+            `<img src="https://..." alt="Description here">\n` +
+            `The alt goes INSIDE the same tag as src.\n` +
+            `Separate them with a space.`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head><title>${topic}</title></head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <img src="https://picsum.photos/300/200">\n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelector('img[alt]') !== null &&
+        (doc.querySelector('img')?.getAttribute('alt')?.length ?? 0) > 0,
+    },
+
+    // ── STEP 3: IDENTIFY — Image size with CSS ──────────────────
+    {
+      id: 'step-3',
+      type: 'identify',
+      instruction: () =>
+        `Images can be resized with CSS!\n\n` +
+        `Add a style rule to control your image size:\n\n` +
+        `img {\n` +
+        `  width: 300px;\n` +
+        `}\n\n` +
+        `Try different numbers — what happens in the preview?`,
+      bytePrompt: () =>
+        `Without a width, images can be HUGE or tiny.\n` +
+        `CSS gives you control.\n` +
+        `img is the CSS selector for all images.\n` +
+        `width: 300px means 300 pixels wide.`,
+      hint: `Add this in a style tag in the head:\n` +
+            `<style>\n` +
+            `  img {\n` +
+            `    width: 300px;\n` +
+            `  }\n` +
+            `</style>\n` +
+            `The height adjusts automatically to keep proportions.`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head>\n` +
+        `    <title>${topic}</title>\n` +
+        `    <style>\n` +
+        `      /* Add image width here */\n` +
+        `      \n` +
+        `    </style>\n` +
+        `  </head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <img src="https://picsum.photos/300/200" alt="A picture">\n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) => {
+        const img = doc.querySelector('img') as HTMLImageElement | null
+        if (!img) return false
+        const width = window.getComputedStyle(img).width
+        return width !== '' && width !== 'auto'
+      },
+    },
+
+    // ── STEP 4: FIX — Missing closing quote on src ──────────────
+    {
+      id: 'step-4',
+      type: 'fix',
+      instruction: () =>
+        `Byte's image is broken — the icon shows but no photo.\n\n` +
+        `Find the mistake in the img tag.\n` +
+        `Clue: attribute values need quotes around them.`,
+      bytePrompt: () =>
+        `This is the MOST COMMON image mistake.\n` +
+        `Every attribute value needs quotes.\n` +
+        `A quote to START the value.\n` +
+        `A quote to END the value.\n` +
+        `Count the quote marks in the src attribute.`,
+      hint: `An attribute value needs TWO quote marks:\n` +
+            `src="the url goes here"\n` +
+            `One opening " at the start.\n` +
+            `One closing " at the end.\n` +
+            `If one is missing, the browser cannot read the URL.`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head><title>${topic}</title></head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <img src="https://picsum.photos/300/200 alt="A picture">\n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelector('img[src]') !== null &&
+        doc.querySelector('img[alt]') !== null,
+    },
+
+    // ── STEP 5: COMBINE — Second image, full styled page ────────
+    {
+      id: 'step-5',
+      type: 'combine',
+      instruction: (topic: string) =>
+        `Final step — add a SECOND image!\n\n` +
+        `Your ${topic} page should now have:\n` +
+        `✓ h1 heading with your topic\n` +
+        `✓ At least one paragraph\n` +
+        `✓ Two images with src AND alt\n` +
+        `✓ CSS giving images a width\n\n` +
+        `Check the preview. This is a real webpage.`,
+      bytePrompt: (topic: string) =>
+        `Two images. Headings. Paragraphs. CSS.\n` +
+        `Look at that preview.\n` +
+        `That is a REAL webpage about ${topic}.\n` +
+        `You built that.`,
+      hint: `Just copy your img tag and change the URL:\n` +
+            `<img src="https://picsum.photos/300/201" alt="Second image">\n` +
+            `(Change the number at the end for a different photo!)`,
+      startingCode: (topic: string) =>
+        `<html>\n` +
+        `  <head>\n` +
+        `    <title>${topic}</title>\n` +
+        `    <style>\n` +
+        `      img { width: 300px; }\n` +
+        `    </style>\n` +
+        `  </head>\n` +
+        `  <body>\n` +
+        `    <h1>${topic}</h1>\n` +
+        `    <p>Something amazing about ${topic}.</p>\n` +
+        `    <img src="https://picsum.photos/300/200" alt="First image">\n` +
+        `    \n` +
+        `  </body>\n` +
+        `</html>`,
+      xp: 10,
+      validate: (doc: Document) =>
+        doc.querySelectorAll('img[src]').length >= 2 &&
+        doc.querySelectorAll('img[alt]').length >= 2,
+    },
+  ],
+}
+```
+
+---
+
+# ═══════════════════════════════════════════════════════════
+# PART 3 — LESSON PAGE RENDERING UPDATES
+# ═══════════════════════════════════════════════════════════
+
+## CRITICAL: HOW TO RENDER LESSON DATA
+
+All lesson functions now take `(topic: string)` as an argument.
+The LessonPage must call them with the topicName from the store.
+
+```typescript
+// In LessonPage.tsx — update all rendering:
+
+const { topicName } = useGameStore()
+
+// Get current step
+const currentStep = currentLesson.steps[currentStepIndex]
+
+// Render instruction:
+const instruction = typeof currentStep.instruction === 'function'
+  ? currentStep.instruction(topicName)
+  : currentStep.instruction
+
+// Render bytePrompt:
+const bytePrompt = typeof currentStep.bytePrompt === 'function'
+  ? currentStep.bytePrompt(topicName)
+  : currentStep.bytePrompt
+
+// Render startingCode:
+const startingCode = typeof currentStep.startingCode === 'function'
+  ? currentStep.startingCode(topicName)
+  : currentStep.startingCode
+
+// Apply startingCode ONLY when the step first loads (on step index change)
+// NOT on every re-render
+useEffect(() => {
+  if (startingCode && currentStep.type !== 'write') {
+    // Only pre-fill for fix/identify/combine steps
+    // write steps start blank so the kid types from scratch
+    setEditorValue(startingCode)
+    updateCode(startingCode)
+  } else {
+    setEditorValue('')
+    updateCode('')
+  }
+}, [currentStepIndex, currentLessonId])
+```
+
+---
+
+## THE LESSON MAP — UPDATE NODE STATES
+
+```typescript
+// MapPage.tsx — add this to the lesson node rendering:
+
+const LESSON_METADATA = [
+  { id: 'lesson-01', title: 'Say Hello to the Web!', emoji: '👋' },
+  { id: 'lesson-02', title: 'Make a Big Title!',      emoji: '🔤' },
+  { id: 'lesson-03', title: 'Write Your Story',       emoji: '📝' },
+  { id: 'lesson-04', title: 'Paint With Colors!',     emoji: '🎨' },
+  { id: 'lesson-05', title: 'Make a List of Things',  emoji: '📋' },
+  { id: 'lesson-06', title: 'Add a Picture!',         emoji: '🖼️' },
+  { id: 'lesson-07', title: 'Make Things Shine',      emoji: '✨', locked: true },
+  { id: 'lesson-08', title: 'Click This Button!',     emoji: '🖱️', locked: true },
+  { id: 'lesson-09', title: 'Build a Menu',           emoji: '🧭', locked: true },
+  { id: 'lesson-10', title: 'Your First Website!',    emoji: '🏆', locked: true },
+]
+
+// Lessons 7-10: show as locked with "Coming Soon" tooltip
+// Do not make them clickable
+// Display: padlock icon, grayed out, slight opacity reduction
+// On hover: tooltip "More lessons coming soon!" fades in
+```
+
+---
+
+# ═══════════════════════════════════════════════════════════
+# PART 4 — INTERACTION SPECIFICATIONS
+# ═══════════════════════════════════════════════════════════
+
+## THE STUCK DETECTION SYSTEM
+
+```typescript
+// Add to LessonPage.tsx
+
+const STUCK_THRESHOLD_MS = 20000  // 20 seconds
+
+useEffect(() => {
+  if (!isTypingRef.current) return  // Only run if kid was typing before
+
+  const timer = setTimeout(() => {
+    // Kid has not typed for 20 seconds
+    setIsStuck(true)
+    setMascotMood('think', `Take your time. What does the instruction say to type?\nLook at the preview — does it match what you want?`)
+  }, STUCK_THRESHOLD_MS)
+
+  return () => clearTimeout(timer)
+}, [code])  // Resets every time code changes
+
+// Reset stuck when kid types again
+const handleCodeChange = (newCode: string) => {
+  setIsStuck(false)
+  isTypingRef.current = true
+  updateCode(newCode)
+  // ... rest of handler
+}
+```
+
+## THE ISTYPING VISUAL SYSTEM
+
+```
+When isTyping is true AND isStuck is false:
+  → Byte stays in idle mode
+  → The typing indicator shows (3 bouncing dots below Byte)
+  → Preview border shows a VERY subtle purple tint (opacity 0.3)
+    indicating "live connection active"
+
+When isTyping is false AND isStuck is true (20+ seconds passed):
+  → Byte switches to think mode
+  → Think message appears (from stuck detection above)
+  → Hint button appears with slight orange glow even before 2 fails
+    (additional nudge for stuck kids)
+```
+
+## WORD-BY-WORD TYPEWRITER FOR BYTE
+
+```typescript
+// components/Byte/ByteTypewriter.tsx
+
+// This component renders Byte's speech bubble with typewriter effect
+// Props: text (string), onComplete (callback)
+// Speed: 28ms per character
+// Pause on punctuation: period/exclamation/question = 200ms
+// Pause on newline: 150ms
+// Pause on comma: 80ms
+// ALL CAPS words get a brief pause before (80ms) and after (80ms)
+//   — creates emphasis rhythm
+
+// Implementation:
+// useEffect that sets up a character-by-character reveal
+// Store displayedText in local state
+// On text prop change: reset and restart the reveal
+// On unmount: clear the interval
+
+// The speech bubble rerenders with each new character
+// Use a monospace cursor blinking at end (|) that disappears on complete
+```
+
+---
+
+## CRITICAL RULES — DO NOT VIOLATE THESE
+
+1. startingCode for FIX and COMBINE steps is a function that takes topicName.
+   The editor pre-fills with the kid's actual topic in the code.
+   A Minecraft kid sees <h1>Minecraft</h1> in the starting code.
+   A dog kid sees <h1>My Dog</h1>.
+
+2. Write steps (step-1) start with empty editor OR the page structure only.
+   They do not pre-fill the answer — they pre-fill the SCAFFOLD.
+
+3. Byte never talks about something generic.
+   Every bytePrompt references the topic or the specific concept.
+   Replace "your page" with "your [topic] page" everywhere.
+
+4. The validator iframe runs inside a sandboxed environment.
+   window.getComputedStyle inside the validator refers to the IFRAME's window.
+   The validator function receives doc: Document from the iframe.
+   Do NOT use the outer window for computed styles.
+   Correct pattern: (doc.querySelector('h1') as HTMLElement)?.style.color
+   OR pass the iframe contentWindow to getComputedStyle.
+
+5. Lesson data files export typed Lesson objects.
+   All fields are either strings or functions returning strings.
+   The LessonPage resolves them at render time with topicName.
+
+6. Never autoplay any animation.
+   All Byte animations are triggered by events (step load, pass, fail, etc.)
+   The only looping animations are the body float and the ambient particles.
+
+7. The preview is NEVER blank.
+   Even with empty code: show the shell with empty body.
+   Even with invalid code: show whatever parsed.
+   The visual feedback loop IS the lesson.
+
+---
+
+## BUILD ORDER FOR THIS PROMPT
+
+Build in exactly this sequence:
+
+1. ByteAnimator.tsx — the full animation system
+   Test: Byte floats, eyes blink, arms sway. Moods visually distinct.
+
+2. ByteTypewriter.tsx — typewriter speech bubble
+   Test: Text appears character by character. Punctuation pauses.
+
+3. lesson-03.ts — complete lesson data
+   Test: All 5 steps validate correctly with varied topicName values.
+
+4. lesson-04.ts — complete lesson data
+   Test: CSS validators work inside iframe sandbox.
+
+5. lesson-05.ts — complete lesson data
+   Test: Nested list validator detects ul inside li.
+
+6. lesson-06.ts — complete lesson data
+   Test: Image validators check for both src and alt attributes.
+
+7. LessonPage.tsx updates — topicName injection
+   Test: Starting code contains actual topicName for all fix/combine steps.
+
+8. MapPage.tsx updates — locked lesson states for 7-10
+   Test: Lessons 7-10 are not clickable, show padlock, have tooltip.
+
+9. Micro-interactions — stuck detection, isTyping indicator,
+   preview border feedback, XP trail, heart crack effect
+   Test each one individually.
+
+10. Full integration test:
+    Complete Lesson 3 as "Minecraft" from scratch.
+    Complete Lesson 4 as "My dog" from scratch.
+    Verify topicName appears in starting code.
+    Verify Byte's typewriter works across all mood changes.
+    Verify review page triggers after intentional wrong answers.
+
+---
+
+END OF SPEC
+
+This is a production build prompt. Every detail is deliberate.
+Build it clean. Build it typed. Build it tested.
+The standard is: a 7-year-old can sit down, pick "Minecraft,"
+and feel like every piece of this app was made FOR them.

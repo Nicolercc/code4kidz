@@ -1,0 +1,145 @@
+You are a senior frontend engineer who has shipped animation systems for consumer games and mobile apps. You write clean, typed, production-ready code. You do not guess. You do not improvise copy. You build exactly what is specified below.
+
+This is a targeted animation and game-feel overhaul for Code4Kidz. You are NOT touching validators, lesson data, routing logic, or the store structure. You are making what already exists feel alive.
+
+Build in this exact order. Do not skip steps. Test each one before moving to the next.
+
+═══════════════════════════════════════
+STEP 1 — LANDING PAGE (3 changes only)
+═══════════════════════════════════════
+
+1a. Find the stats row with "50K+ Kids Learning / 120+ Lessons / 4.9 Rating". Replace the text with:
+  "Free" / "Forever"
+  "Ages" / "7-10"
+  "Real" / "HTML & CSS"
+  Keep the exact same layout and visual styling. Only the words change.
+
+1b. Find the "Classroom" item in the top navigation. Either remove it entirely OR add: opacity: 0.4, pointer-events: none, cursor: not-allowed. Add a tooltip on hover that says "Coming soon!" Do not leave a clickable link that goes nowhere.
+
+1c. Find the Byte SVG or image in the landing page hero section. Add a Framer Motion entrance animation:
+  Initial state: x: 120, opacity: 0
+  Animate to: x: 0, opacity: 1
+  Transition: type "spring", stiffness: 80, damping: 14, delay: 0.4
+  After this entrance, Byte settles into whatever idle float already exists.
+
+═══════════════════════════════════════
+STEP 2 — BYTE ANIMATION SYSTEM
+═══════════════════════════════════════
+
+Create or fully replace: src/components/Byte/ByteAnimator.tsx
+
+This component accepts:
+  mood: 'idle' | 'cheer' | 'think' | 'sad' | 'story'
+  size?: number (default 96)
+  isTyping?: boolean
+  isStuck?: boolean
+  justPassed?: boolean
+  justFailed?: boolean
+
+--- IDLE ---
+Wrap the Byte SVG in a motion.div with these simultaneous animations:
+  Float: y [0, -6, 0], duration 3.5s, ease easeInOut, repeat Infinity
+  Sway: rotate [0, 0.8, 0, -0.8, 0], duration 5s, ease easeInOut, repeat Infinity
+  These two must run at the same time but NEVER sync — different durations ensure this.
+
+Eyes blink: keep whatever blink already exists. If none exists: every 3-5 seconds (randomized via useEffect + setTimeout), animate the eyelid elements from height 0 to 100% to 0, duration 0.12s close, 0.06s hold, 0.12s open.
+
+Pupil tracking: on mousemove anywhere in the lesson panel, move the pupil elements (the inner circles of Byte's eyes) a maximum of 3px in any direction from their center position. Use lerp with factor 0.08 — smooth and slightly lagged. Update on requestAnimationFrame. This makes Byte's eyes follow the user's cursor. Disable during sad mood.
+
+Arms: add gentle idle sway to Byte's arm elements:
+  Left arm: rotate [-2, 2, -2], duration 4.2s, repeat Infinity
+  Right arm: rotate [2, -2, 2], duration 3.8s, repeat Infinity
+  Arms must be out of sync with each other and with the body.
+
+--- CHEER ---
+This fires once when justPassed becomes true. It does NOT loop.
+Sequence:
+  1. JUMP: y [0, -22, -4, -16, 0], type spring, stiffness 180, damping 10, scale [1, 1.12, 1] at peak. Duration ~0.7s.
+  2. ARMS UP simultaneously: left arm rotate [0, -150, -150, 0], right arm rotate [0, 150, 150, 0], duration 0.6s.
+  3. STAR BURST at jump peak: 8 small div elements (6-10px circles, background gold #FFD700) emit from Byte's center. Each travels in a different direction (0, 45, 90, 135, 180, 225, 270, 315 degrees). Each: scale 0 to 1.2 to 0, translate outward 60px, opacity 1 to 0, duration 0.7s. All fire simultaneously.
+  4. HAPPY SQUINT: eyelid elements animate to 35% closed at jump peak, hold 0.4s, reopen.
+  5. EYEBROWS UP: eyebrow elements move y -4px, hold 1s, return.
+  6. SETTLE: y [0, -8, 0, -4, 0], then return to idle float.
+  Total cheer duration: 1.5s. After 1.5s automatically return to idle.
+
+--- THINK ---
+Fires when isStuck becomes true or hint is revealed.
+  Body tilt: rotate [0, -4, -4], duration 0.8s ease-out, hold at -4 for entire think duration.
+  Bob: y [0, -3, 0], duration 2.2s, repeat Infinity while in think mode.
+  Right arm chin pose: rotate [0, -35, -35], duration 0.6s, hold.
+  Left arm: rotate [0, 8, 8], hold.
+  Eyes: every 6-8s, lids drop to 60% closed, hold 1.5s, open slowly over 0.4s.
+  Right eyebrow: move y -3px, hold for think duration.
+  Lightbulb emoji above head: scale 0 to 1.2 to 1.0, y -10 to -20, opacity 0 to 1, duration 0.5s. Hold 2s then fade out.
+
+--- SAD ---
+Fires when justFailed becomes true (specifically on heart loss, not every wrong answer).
+  Step 1: Brief red flash on Byte. Use a red semi-transparent overlay div on top of Byte: opacity 0 to 0.6 to 0, duration 0.5s.
+  Step 2: Droop: y [0, 5, 3], rotate [0, 2, 1], ease easeOut, hold.
+  Step 3: Arms hang: both arms rotate [0, 20, 20], drooped position.
+  Step 4: Inner ends of eyebrows drop 3px.
+  Step 5: Auto-recover after 2.5s. Animate back to idle: y [3, 0], rotate [1, 0], duration 0.8s.
+  If hearts reach 0: also flash a full-screen overlay rgba(179,58,28,0.15), opacity 0 to 0.15 to 0, duration 0.8s.
+
+--- STORY ---
+Fires when byteStoryMoment bubble is visible.
+  Body lean forward: rotate [0, -3, -3], duration 1s ease-out, hold for story duration.
+  Bob: y [0, -4, 0], duration 2.5s, repeat Infinity.
+  Right arm storytelling gesture: rotate [0, -15, -10, -15], duration 3s, repeat Infinity.
+
+--- LESSON LOAD ENTRANCE ---
+Fires once when LessonPage first mounts.
+  Step 1 (0-0.6s): y [60, 0], opacity [0, 1], spring stiffness 120 damping 14.
+  Step 2 (0.6-1.4s): right arm wave — rotate [0, -60, -20, -60, -20, -60, 0], duration 0.8s.
+  Step 3 (0.4-0.7s): eye circles scale 1.0 to 1.35 to 1.0, duration 0.4s.
+  Then settle into idle loop.
+
+--- ONE-SHOT EVENTS ---
+On step advance (not full lesson complete): y [0, -8, 0] hop, duration 0.35s.
+On lesson complete (before CompletePage navigation): 3 jumps each bigger than last, double star burst, arms up. After 1.5s the page navigation begins.
+
+═══════════════════════════════════════
+STEP 3 — SPEECH BUBBLE TYPEWRITER
+═══════════════════════════════════════
+
+Create: src/components/Byte/ByteTypewriter.tsx
+
+This component receives a text string as a prop and renders it character by character.
+
+Rules:
+  Speed: 28ms per character
+  On . or ! or ?: pause 220ms before the next character
+  On ,: pause 90ms
+  On newline: pause 180ms
+  Words in ALL CAPS: before the first character of that word, the bubble does a micro-shake — x [0, -2, 2, -1, 1, 0], duration 0.25s
+  While typing: show a blinking | cursor at the end. Cursor blinks opacity 1 to 0, duration 0.5s, repeats until typing is complete.
+  On message change (new text prop): reset and restart the reveal from the beginning.
+
+Bubble entrance animation: scale 0.85 to 1.0, opacity 0 to 1, duration 0.2s ease-out.
+Bubble exit when message changes: opacity 1 to 0, y 0 to -4, duration 0.15s.
+
+Bubble background and border by mood (passed as a prop):
+  idle:  background white, border-left 3px solid #5C3EBC
+  cheer: background #D6F5E8, border-left 4px solid #1A7A4E
+  think: background #FEF0D6, border-left 3px solid #D4581A
+  sad:   background #FDECE6, border-left 3px solid #B33A1C
+  story: background #FAE8F3, border-left 4px solid #8C2060, plus a "Byte's story" label in 11px bold #8C2060 at the top of the bubble
+
+Replace all existing static Byte speech bubble rendering with this ByteTypewriter component.
+
+═══════════════════════════════════════
+STEP 4 — ONBOARDING SCREENS
+═══════════════════════════════════════
+
+--- SCREEN 1 (Byte intro) ---
+Add Byte arm wave once, 1 second after component mounts. Use the wave animation from Step 2.
+Add ambient particle field (see Step 8 below).
+Fix "YOUR ROBOT CODING BUDDY" text: change color to white. Current teal on dark background fails contrast.
+
+--- SCREEN 2 (Topic picker) ---
+Add Byte (88px size) positioned at top-center of the screen.
+Byte starts in idle float animation on mount.
+When the user selects a chip OR types anything into the text input:
+  Byte switches to cheer mood — the full jump sequence from Step 2 fires.
+  Byte speech bubble appears with text: "Oh WOW — [topicName]?! That is going to be AMAZING!"
+  Use the ByteTypewriter component for this

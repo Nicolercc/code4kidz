@@ -1,0 +1,155 @@
+What is working well:
+
+3-panel layout is correct
+Byte SVG renders and is positioned well
+Warm-up card with timer (54 seconds) is clean
+Step 4 of 5 progress bar with green/purple segments looks great
+Live preview is actually working — "Space" h1 and 3 paragraphs are rendering
+topicName injection is working — it says "Space" everywhere it should
+"Need a hint?" button is there
+XP counter (150 → 180 XP) is incrementing
+Hearts are showing
+
+What needs to change — send this to your agent now:
+
+ISSUE 1 — The left panel background is too light and generic.
+The left panel is #F0EFFF (pale lavender). It should feel like it belongs to the same world as Byte. Give the lesson panel a slightly deeper purple tone so Byte pops against it.
+css.lesson-panel {
+  background: linear-gradient(180deg, #EDE9FB 0%, #E8E3F8 100%);
+  border-right: 1px solid #D4CFF5;
+}
+ISSUE 2 — The warm-up card is too muted.
+The warm-up card in Screenshot 1 is a pale salmon/pink — fine, but the text "WARM-UP!" in orange on that background is hard to read and the lightning bolt emoji sits awkwardly. Tighten it:
+css.warmup-card {
+  background: #FEF0D6;
+  border: 2px solid #D4581A;
+  border-radius: 16px;
+  padding: 16px 20px;
+}
+.warmup-label {
+  color: #D4581A;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+.warmup-sub {
+  color: #854F0B;
+  font-size: 12px;
+  margin-top: 2px;
+}
+/* Timer circle: stroke color #D4581A, background stroke #FDE8C4 */
+ISSUE 3 — "YOUR MISSION" label and the mission card.
+In Screenshot 1 the mission card is a plain white box with "YOUR MISSION" in purple uppercase. In Screenshot 2 it becomes "Your Mission:" in purple — inconsistent. Pick one and stick with it. Use this:
+css.mission-card {
+  background: white;
+  border-radius: 16px;
+  border: 1.5px solid #D4CFF5;
+  padding: 20px;
+}
+.mission-label {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5C3EBC;
+  margin-bottom: 10px;
+}
+.mission-text {
+  font-size: 16px;
+  color: #111111;
+  line-height: 1.65;
+}
+ISSUE 4 — Byte's speech bubble color in Screenshot 2 is orange/amber.
+In the stuck/think state the bubble is a pale amber which is correct per spec. But the text color #D4581A on that pale amber background is hard to read at 16px for a 7-year-old. Fix:
+css.byte-bubble-think {
+  background: #FEF0D6;
+  border-left: 4px solid #D4581A;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.byte-bubble-think p {
+  color: #7A3A0A;  /* darker amber — not orange */
+  font-size: 16px;
+  line-height: 1.6;
+}
+ISSUE 5 — The live preview panel is stark white.
+The preview iframe renders in a completely white background. Add a subtle warm off-white to the preview shell so it feels like a real browser, not a blank void:
+In your PREVIEW_SHELL function (the string that wraps kid code in the iframe), update the body default style:
+javascriptconst PREVIEW_SHELL = (code) => `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        padding: 1.5rem 1.75rem;
+        margin: 0;
+        color: #111111;
+        line-height: 1.7;
+        background: #FAFAF8;  /* warm off-white — NOT pure white */
+        min-height: 100vh;
+      }
+      h1 { font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem; }
+      h2 { font-size: 1.4rem; font-weight: 700; margin: 1rem 0 0.4rem; }
+      h3 { font-size: 1.1rem; font-weight: 600; margin: 0.75rem 0 0.3rem; }
+      p  { margin: 0.5rem 0; }
+      img { max-width: 100%; border-radius: 8px; }
+      ul, ol { padding-left: 1.5rem; }
+      li { margin: 0.3rem 0; }
+    </style>
+  </head>
+  <body>${code}</body>
+</html>`
+ISSUE 6 — The "Need a hint?" button looks unfinished.
+It has a dashed/faint border and the spinner icon inside it looks broken (the · character). Fix:
+css.hint-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 24px;
+  border: 2px solid #D4581A;
+  background: #FEF0D6;
+  color: #D4581A;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.hint-button:hover {
+  background: #D4581A;
+  color: white;
+  transform: scale(1.03);
+}
+/* Replace the · spinner with a 💡 emoji at 16px */
+ISSUE 7 — The Exit button top-left.
+"× Exit" in a white pill border is too subtle. Kids need affordance. Make it feel like a real button:
+css.exit-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 2px solid #D4CFF5;
+  background: white;
+  color: #5C3EBC;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.exit-button:hover {
+  background: #EDE9FB;
+  border-color: #5C3EBC;
+}
+
+What NOT to change:
+
+Do not touch the editor or the CodeMirror instance
+Do not touch any validators
+Do not touch lesson data
+Do not touch routing
+Do not rebuild anything that works
+
+The core loop is working. The product exists. These are polish fixes that take the experience from "a developer built this" to "a designer touched this." Send these to your agent as one block and it should be a fast pass.
+One more thing — in Screenshot 2, the step 4 fix challenge shows "Byte's code has a bug!" but the preview on the right is already showing the correct output (Space h1 + 3 paragraphs). That means the startingCode for the fix step is not loading — the kid is editing from where they left off, not from the broken code. Tell your agent:
+"When the step type is 'fix', always reset the editor to step.startingCode when the step loads, regardless of what was in the editor before. Use a useEffect that watches currentStepIndex and sets the editor value to startingCode whenever the step type is 'fix' or 'identify'.

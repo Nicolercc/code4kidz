@@ -1,0 +1,307 @@
+PASTE THIS TO YOUR AGENT — RIGHT NOW:
+You are a senior frontend engineer. The onboarding page and map page 
+are completely white and lifeless. This is a UI emergency. Fix both 
+pages immediately with the following exact CSS and layout changes. 
+Do not touch any logic, store, validators, or lesson data. 
+Only visual changes. Build order: onboarding first, map second.
+
+ONBOARDING PAGE — full visual overhaul:
+css/* Replace the page background with this */
+.onboarding-page {
+  min-height: 100vh;
+  background: linear-gradient(145deg, #1a0a3d 0%, #3d1278 50%, #1a2a6c 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Add these two decorative orbs as absolute divs inside the page */
+.orb-topleft {
+  position: absolute;
+  width: 220px; height: 220px;
+  background: #5C3EBC;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  top: -60px; left: -60px;
+  pointer-events: none;
+}
+.orb-bottomright {
+  position: absolute;
+  width: 160px; height: 160px;
+  background: #D4581A;
+  border-radius: 50%;
+  filter: blur(50px);
+  opacity: 0.3;
+  bottom: 80px; right: -40px;
+  pointer-events: none;
+}
+
+/* Stars — add 8 of these tiny divs inside the page, absolute positioned */
+.star {
+  position: absolute;
+  width: 2px; height: 2px;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 2s infinite alternate;
+}
+@keyframes twinkle {
+  from { opacity: 0.2; }
+  to { opacity: 0.9; }
+}
+/* Scatter them: top:8% left:55%, top:18% left:75%, top:12% left:8%,
+   top:35% left:15%, top:55% left:88%, top:72% left:5%, 
+   top:25% left:92%, top:45% left:40% — each with a different animation-delay 0-1.5s */
+
+/* Byte face on onboarding */
+.byte-face {
+  animation: float 3.5s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+/* Add glow to Byte's container: box-shadow: 0 0 28px rgba(155,114,240,0.5) */
+
+/* Headline text */
+.ob-headline {
+  color: white;
+  font-size: clamp(22px, 5vw, 28px);
+  font-weight: 900;
+  text-align: center;
+  line-height: 1.25;
+}
+.ob-sub {
+  color: rgba(255,255,255,0.65);
+  font-size: 15px;
+  text-align: center;
+}
+
+/* Topic chip pills */
+.topic-chip {
+  padding: 8px 16px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.15s ease;
+  /* Unselected state: */
+  background: rgba(155,114,240,0.2);
+  color: #c4a8ff;
+  border-color: rgba(155,114,240,0.35);
+}
+.topic-chip:hover {
+  background: rgba(155,114,240,0.35);
+  transform: scale(1.04);
+}
+.topic-chip.selected {
+  background: #5C3EBC;
+  color: white;
+  border-color: #9B72F0;
+  transform: scale(1.06);
+  box-shadow: 0 0 16px rgba(155,114,240,0.6);
+}
+/* Alternate some chips in orange and teal tones for visual variety:
+   Dog chip: rgba(212,88,26,0.2) / #ffb380
+   Space chip: rgba(13,124,123,0.2) / #7ef0ed
+   Keep the rest in purple */
+
+/* Text input */
+.ob-input {
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.25);
+  border-radius: 14px;
+  color: white;
+  font-size: 16px;
+  padding: 13px 18px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.ob-input:focus {
+  border-color: rgba(155,114,240,0.7);
+  background: rgba(255,255,255,0.15);
+}
+.ob-input::placeholder { color: rgba(255,255,255,0.35); }
+
+/* CTA Button — this button must feel clickable and exciting */
+.ob-cta-button {
+  width: 100%;
+  padding: 15px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #D4581A 0%, #f07030 100%);
+  color: white;
+  font-size: 17px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(212,88,26,0.5);
+  animation: cta-pulse 2.2s ease-in-out infinite;
+  /* Text updates dynamically: "Let's build my [topicName] page →" */
+}
+@keyframes cta-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.025); }
+}
+
+MAP PAGE — full visual overhaul:
+css/* Page background */
+.map-page {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #0f0f1a 0%, #1a0a3d 40%, #0d2040 100%);
+  position: relative;
+  overflow: hidden;
+}
+/* Same orbs and stars as onboarding — copy them in */
+
+/* Header bar */
+.map-header {
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(8px);
+  position: sticky; top: 0; z-index: 10;
+}
+.map-logo {
+  color: white;
+  font-size: 18px;
+  font-weight: 900;
+}
+.map-logo-accent { color: #9B72F0; } /* "Code" in purple, "4Kidz" in white */
+
+/* Streak badge in header */
+.streak-badge {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(212,88,26,0.2);
+  border: 1px solid rgba(212,88,26,0.4);
+  border-radius: 20px;
+  padding: 5px 12px;
+}
+.streak-number { color: #ff9f60; font-size: 14px; font-weight: 800; }
+
+/* XP badge in header */
+.xp-badge {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(92,62,188,0.2);
+  border: 1px solid rgba(92,62,188,0.4);
+  border-radius: 20px;
+  padding: 5px 12px;
+}
+.xp-number { color: #c4a8ff; font-size: 14px; font-weight: 800; }
+
+/* Page title area */
+.map-page-title {
+  color: white;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+  padding-top: 20px;
+  padding-bottom: 4px;
+}
+.map-page-sub {
+  color: rgba(255,255,255,0.45);
+  font-size: 12px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* SKILL TREE NODES — this is the most important part */
+
+/* Winding path: nodes alternate LEFT / CENTER / RIGHT */
+/* Add a thin vertical line behind all nodes: 
+   position absolute, width 2px, left 50%, height 100%,
+   background: rgba(255,255,255,0.08) */
+
+/* COMPLETED NODE */
+.node-completed {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1D9E75, #0F6E56);
+  border: 3px solid #5DCAA5;
+  box-shadow: 0 4px 18px rgba(29,158,117,0.45);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  position: relative;
+}
+.node-completed:hover { transform: scale(1.08); }
+/* Add a small green checkmark badge bottom-right:
+   position absolute, 20x20px, background #1D9E75, 
+   border-radius 50%, border 2.5px solid the page background color,
+   contains a white ✓ at 11px */
+
+/* CURRENT NODE — the glowing one the kid taps */
+.node-current {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7F77DD, #5C3EBC);
+  border: 3px solid #9B72F0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  animation: node-glow 2s ease-in-out infinite;
+}
+@keyframes node-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(92,62,188,0.3),
+                0 4px 20px rgba(92,62,188,0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 14px rgba(92,62,188,0.12),
+                0 4px 24px rgba(92,62,188,0.6);
+  }
+}
+
+/* LOCKED NODE */
+.node-locked {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Node label below each circle */
+.node-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  max-width: 80px;
+  line-height: 1.35;
+  margin-top: 6px;
+  color: rgba(255,255,255,0.55);
+}
+.node-label.completed { color: #5DCAA5; }
+.node-label.current   { color: #c4a8ff; }
+
+/* Connector line between nodes */
+.node-connector {
+  height: 20px;
+  display: flex;
+  justify-content: center;
+}
+.node-connector-line {
+  width: 2px;
+  background: linear-gradient(to bottom,
+    rgba(255,255,255,0.15),
+    rgba(255,255,255,0.04));
+}
+
+/* Bottom hint text */
+.map-tap-hint {
+  text-align: center;
+  color: rgba(255,255,255,0.35);
+  font-size: 12px;
+  margin-top: 12px;
+  padding-bottom: 24px;
+}
+The button text must update dynamically. When the kid selects "Minecraft" in onboarding and reaches the map, the "Continue" button or node tap shows context. This is already in your store — just make sure topicName from useGameStore() is used anywhere the UI says "your page" or "your topic."
+The winding path layout for map nodes: Alternate the horizontal position of each node — first node flush left (padding-left: 40px), second node center, third node flush right (padding-right: 40px), fourth node center, fifth node flush left. This creates the snake/winding visual that makes Duolingo's map feel like a journey rather than a list.
+No white anywhere. If you see white: it is wrong. Every background is dark purple. Every card uses rgba(255,255,255,0.08) for subtle surfaces. Every text color is white, rgba(white,0.7), or one of the brand accent colors. The only white is text.

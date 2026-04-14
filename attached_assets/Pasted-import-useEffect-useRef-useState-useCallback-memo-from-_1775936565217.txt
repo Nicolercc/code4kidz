@@ -1,0 +1,428 @@
+import { useEffect, useRef, useState, useCallback, memo } from "react";
+import { motion, useAnimation, AnimatePresence } from "framer-motion";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+export type ByteState = "idle" | "think" | "cheer" | "sad" | "celebrate";
+
+interface ByteProps {
+  state?: ByteState;
+  size?: number;
+  showSpeech?: boolean;
+  className?: string;
+  onStateEnd?: () => void;
+}
+
+// ─── Duo-style speech lines ────────────────────────────────────────────────────
+const LINES: Record<ByteState, string[]> = {
+  idle: [
+    "Waiting for you... 👀",
+    "Let's build something cool!",
+    "I run on electricity and vibes ⚡",
+    "Boop boop. Ready when you are.",
+    "Don't be shy, I'm just a robot 🤖",
+    "My WiFi is faster than your excuses",
+  ],
+  think: [
+    "Hmm... my circuits are tingling 🔌",
+    "Calculating... this may take a nanosecond",
+    "Big brain moment incoming 🧠",
+    "Error 404: answer not found... jk, hold on",
+    "Beep boop... I'm thinking, I promise",
+    "Consulting the robot elders...",
+  ],
+  cheer: [
+    "YES!! You actually did it!! 🎉",
+    "LETS GOOO!! 🚀🚀🚀",
+    "I knew you had it in you!!",
+    "BEEP BOOP BEEP — that means AMAZING 🤖✨",
+    "That was so clean!! I'm literally glowing",
+    "You just leveled up!! 🏆",
+  ],
+  sad: [
+    "Oops! Happens to the best robots 💛",
+    "That's okay, even I crash sometimes",
+    "Error? More like learning opportunity 😌",
+    "Nope — but you're SO close!",
+    "Every wrong answer = XP for your brain 🧠",
+  ],
+  celebrate: [
+    "LESSON COMPLETE!! You're a LEGEND 👑",
+    "FULL MARKS!! I'm telling the whole school 📣",
+    "You just broke Byte. I'm too happy 💥",
+    "SCREAMING!! That was PERFECT!!",
+  ],
+};
+
+const randomLine = (state: ByteState) => {
+  const lines = LINES[state];
+  return lines[Math.floor(Math.random() * lines.length)];
+};
+
+// ─── SVG Variants ─────────────────────────────────────────────────────────────
+const headVariants = {
+  idle:      { rotate: 0,   x: 0,  y: 0,  transition: { type: "spring", stiffness: 200, damping: 18 } },
+  think:     { rotate: -13, x: -3, y: 0,  transition: { type: "spring", stiffness: 180, damping: 16 } },
+  cheer:     { rotate: 4,   x: 0,  y: -6, transition: { type: "spring", stiffness: 300, damping: 12 } },
+  sad:       { rotate: 9,   x: 2,  y: 6,  transition: { type: "spring", stiffness: 160, damping: 20 } },
+  celebrate: { rotate: 0,   x: 0,  y: -10, transition: { type: "spring", stiffness: 320, damping: 10 } },
+};
+
+const bodyVariants = {
+  idle:      { scaleX: 1,    scaleY: 1,    y: 0,  transition: { type: "spring", stiffness: 200, damping: 20 } },
+  think:     { scaleX: 0.98, scaleY: 1,    y: 2,  transition: { type: "spring", stiffness: 180, damping: 20 } },
+  cheer:     { scaleX: 1.06, scaleY: 0.94, y: -8, transition: { type: "spring", stiffness: 340, damping: 10 } },
+  sad:       { scaleX: 0.94, scaleY: 1.03, y: 6,  transition: { type: "spring", stiffness: 160, damping: 22 } },
+  celebrate: { scaleX: 1.08, scaleY: 0.92, y: -14, transition: { type: "spring", stiffness: 380, damping: 8 } },
+};
+
+const leftArmVariants = {
+  idle:      { rotate: 0,   x: 0, y: 0,  transition: { type: "spring", stiffness: 200, damping: 18 } },
+  think:     { rotate: 12,  x: 0, y: 4,  transition: { type: "spring", stiffness: 180, damping: 18 } },
+  cheer:     { rotate: -85, x: -6, y: -18, transition: { type: "spring", stiffness: 260, damping: 12 } },
+  sad:       { rotate: 22,  x: 2, y: 8,  transition: { type: "spring", stiffness: 160, damping: 22 } },
+  celebrate: { rotate: -95, x: -8, y: -22, transition: { type: "spring", stiffness: 300, damping: 9 } },
+};
+
+const rightArmVariants = {
+  idle:      { rotate: 0,  x: 0, y: 0,   transition: { type: "spring", stiffness: 200, damping: 18 } },
+  think:     { rotate: -68, x: 8, y: -22, transition: { type: "spring", stiffness: 220, damping: 14 } },
+  cheer:     { rotate: 85,  x: 6, y: -18, transition: { type: "spring", stiffness: 260, damping: 12 } },
+  sad:       { rotate: -22, x: -2, y: 8, transition: { type: "spring", stiffness: 160, damping: 22 } },
+  celebrate: { rotate: 95,  x: 8, y: -22, transition: { type: "spring", stiffness: 300, damping: 9 } },
+};
+
+// ─── Mouth paths per state ─────────────────────────────────────────────────────
+const MOUTH: Record<ByteState, string> = {
+  idle:      "M72 103 Q90 115 108 103",
+  think:     "M76 106 Q90 109 104 106",
+  cheer:     "M66 100 Q90 122 114 100",
+  sad:       "M74 111 Q90 100 106 111",
+  celebrate: "M63 98 Q90 126 117 98",
+};
+
+// ─── Eye shapes per state ──────────────────────────────────────────────────────
+// scaleY for eye squish
+const EYE_SCALE: Record<ByteState, { left: number; right: number }> = {
+  idle:      { left: 1,    right: 1    },
+  think:     { left: 0.35, right: 1    },
+  cheer:     { left: 0.3,  right: 0.3  },
+  sad:       { left: 0.55, right: 0.55 },
+  celebrate: { left: 0.2,  right: 0.2  },
+};
+
+// ─── Sparkle component (memoized, cheap) ──────────────────────────────────────
+const Sparkle = memo(({ x, y, delay, size }: { x: number; y: number; delay: number; size: number }) => (
+  <motion.text
+    x={x} y={y}
+    fontSize={size}
+    fill="#facc15"
+    textAnchor="middle"
+    initial={{ opacity: 0, scale: 0, rotate: -20 }}
+    animate={{ opacity: [0, 1, 1, 0], scale: [0, 1.3, 1, 0], rotate: [0, 15, -10, 0] }}
+    transition={{ delay, duration: 0.8, repeat: Infinity, repeatDelay: 1.2 }}
+  >★</motion.text>
+));
+
+// ─── Main Component ────────────────────────────────────────────────────────────
+const Byte = memo(function Byte({
+  state = "idle",
+  size = 180,
+  showSpeech = true,
+  className = "",
+  onStateEnd,
+}: ByteProps) {
+  const [speech, setSpeech] = useState("");
+  const [showBubble, setShowBubble] = useState(false);
+  const bubbleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevState = useRef<ByteState>(state);
+
+  // Breathing idle loop refs
+  const breathRef = useRef(0);
+  const rafRef = useRef<number>(0);
+  const [breathY, setBreathY] = useState(0);
+  const [antennaPulse, setAntennaPulse] = useState(8);
+
+  // LED blink state
+  const [activeLed, setActiveLed] = useState(1);
+
+  // ── Speech bubble logic ──
+  useEffect(() => {
+    if (state !== prevState.current) {
+      prevState.current = state;
+      if (bubbleTimer.current) clearTimeout(bubbleTimer.current);
+      setSpeech(randomLine(state));
+      setShowBubble(true);
+      bubbleTimer.current = setTimeout(() => {
+        setShowBubble(false);
+        // Auto-return sad → idle
+        if (state === "sad" && onStateEnd) {
+          setTimeout(onStateEnd, 400);
+        }
+      }, 2800);
+    }
+    return () => {
+      if (bubbleTimer.current) clearTimeout(bubbleTimer.current);
+    };
+  }, [state, onStateEnd]);
+
+  // ── Breathing animation (RAF-based, no spring overhead) ──
+  useEffect(() => {
+    if (state !== "idle" && state !== "think") {
+      cancelAnimationFrame(rafRef.current);
+      setBreathY(0);
+      return;
+    }
+    let running = true;
+    const animate = (ts: number) => {
+      if (!running) return;
+      const y = Math.sin(ts / 900) * 1.8;
+      setBreathY(y);
+      setAntennaPulse(8 + Math.sin(ts / 700) * 0.7);
+      rafRef.current = requestAnimationFrame(animate);
+    };
+    rafRef.current = requestAnimationFrame(animate);
+    return () => { running = false; cancelAnimationFrame(rafRef.current); };
+  }, [state]);
+
+  // ── LED cycling (thinking state) ──
+  useEffect(() => {
+    if (state !== "think") return;
+    const id = setInterval(() => setActiveLed(l => (l % 3) + 1), 380);
+    return () => clearInterval(id);
+  }, [state]);
+
+  const isCheer = state === "cheer" || state === "celebrate";
+  const eyeScale = EYE_SCALE[state];
+
+  return (
+    <div className={`byte-mascot ${className}`} style={{ position: "relative", width: size, userSelect: "none" }}>
+      {/* Speech bubble */}
+      <AnimatePresence>
+        {showSpeech && showBubble && (
+          <motion.div
+            key={speech}
+            initial={{ opacity: 0, y: 6, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.94 }}
+            transition={{ type: "spring", stiffness: 400, damping: 24 }}
+            style={{
+              position: "absolute",
+              bottom: "100%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              marginBottom: 10,
+              background: "#ffffff",
+              border: "2px solid #22c55e",
+              borderRadius: 14,
+              padding: "8px 14px",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#15803d",
+              whiteSpace: "nowrap",
+              zIndex: 10,
+              boxShadow: "0 4px 16px rgba(34,197,94,0.18)",
+              fontFamily: "system-ui, -apple-system, sans-serif",
+            }}
+          >
+            {speech}
+            <div style={{
+              position: "absolute", bottom: -9, left: "50%", transform: "translateX(-50%)",
+              width: 0, height: 0,
+              borderLeft: "8px solid transparent", borderRight: "8px solid transparent",
+              borderTop: "9px solid #22c55e",
+            }}/>
+            <div style={{
+              position: "absolute", bottom: -6, left: "50%", transform: "translateX(-50%)",
+              width: 0, height: 0,
+              borderLeft: "7px solid transparent", borderRight: "7px solid transparent",
+              borderTop: "8px solid #ffffff",
+            }}/>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* SVG Robot */}
+      <svg
+        viewBox="0 0 180 220"
+        width={size}
+        height={size * (220 / 180)}
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label={`Byte is ${state}`}
+        role="img"
+        style={{ overflow: "visible", display: "block" }}
+      >
+        {/* ── Bounce wrapper for cheer ── */}
+        <motion.g
+          animate={isCheer ? {
+            y: [0, -18, -4, -14, -2, 0],
+            transition: { duration: 0.7, repeat: Infinity, repeatDelay: 0.6, ease: "easeOut" }
+          } : { y: 0 }}
+        >
+          {/* ── Antenna ── */}
+          <motion.g animate={{ y: breathY * 0.6 }}>
+            <line x1="90" y1="18" x2="90" y2="38" stroke="#16a34a" strokeWidth="4" strokeLinecap="round"/>
+            <motion.circle
+              cx="90" cy="12"
+              animate={{ r: antennaPulse, fill: isCheer ? "#facc15" : "#22c55e" }}
+              transition={{ type: "tween", duration: 0.1 }}
+              stroke="#16a34a" strokeWidth="2"
+            />
+            <circle cx="90" cy="12" r="4" fill="#bbf7d0" opacity={0.8}/>
+          </motion.g>
+
+          {/* ── Head ── */}
+          <motion.g
+            style={{ originX: "90px", originY: "83px" }}
+            variants={headVariants}
+            animate={state}
+          >
+            <motion.g animate={{ y: breathY }}>
+              <rect x="30" y="38" width="120" height="90" rx="22" fill="#22c55e" stroke="#16a34a" strokeWidth="3"/>
+
+              {/* Eye sockets */}
+              <rect x="46" y="58" width="34" height="26" rx="8" fill="#16a34a" opacity={0.35}/>
+              <rect x="100" y="58" width="34" height="26" rx="8" fill="#16a34a" opacity={0.35}/>
+
+              {/* Left eye */}
+              <motion.g
+                style={{ originX: "63px", originY: "71px" }}
+                animate={{ scaleY: eyeScale.left }}
+                transition={{ type: "spring", stiffness: 280, damping: 20 }}
+              >
+                <circle cx="63" cy="71" r="10" fill="white"/>
+                <circle cx="65" cy="72" r="5" fill="#15803d"/>
+                <circle cx="67" cy="69" r="2" fill="white" opacity={0.9}/>
+              </motion.g>
+
+              {/* Right eye */}
+              <motion.g
+                style={{ originX: "117px", originY: "71px" }}
+                animate={{ scaleY: eyeScale.right }}
+                transition={{ type: "spring", stiffness: 280, damping: 20 }}
+              >
+                <circle cx="117" cy="71" r="10" fill="white"/>
+                <circle cx="119" cy="72" r="5" fill="#15803d"/>
+                <circle cx="121" cy="69" r="2" fill="white" opacity={0.9}/>
+              </motion.g>
+
+              {/* Mouth */}
+              <motion.path
+                animate={{ d: MOUTH[state] }}
+                transition={{ type: "spring", stiffness: 260, damping: 22 }}
+                fill="none" stroke="#15803d" strokeWidth="3.5" strokeLinecap="round"
+              />
+
+              {/* Cheek blush */}
+              <motion.ellipse
+                cx="44" cy="95" rx="10" ry="6" fill="#bbf7d0"
+                animate={{ opacity: isCheer ? 0.7 : 0 }}
+                transition={{ duration: 0.3 }}
+              />
+              <motion.ellipse
+                cx="136" cy="95" rx="10" ry="6" fill="#bbf7d0"
+                animate={{ opacity: isCheer ? 0.7 : 0 }}
+                transition={{ duration: 0.3 }}
+              />
+            </motion.g>
+          </motion.g>
+
+          {/* ── Body ── */}
+          <motion.g
+            style={{ originX: "90px", originY: "168px" }}
+            variants={bodyVariants}
+            animate={state}
+          >
+            <motion.g animate={{ y: breathY * 1.2 }}>
+              <rect x="35" y="132" width="110" height="72" rx="18" fill="#16a34a" stroke="#15803d" strokeWidth="3"/>
+              <rect x="52" y="146" width="76" height="44" rx="10" fill="#22c55e" stroke="#15803d" strokeWidth="1.5"/>
+
+              {/* LEDs */}
+              <motion.circle cx="70" cy="162" r="6"
+                animate={{ fill: activeLed === 1 || isCheer ? "#facc15" : "#bbf7d0", scale: activeLed === 1 ? 1.2 : 1 }}
+                transition={{ duration: 0.15 }}
+              />
+              <motion.circle cx="90" cy="162" r="6"
+                animate={{ fill: activeLed === 2 || isCheer ? "#4ade80" : "#bbf7d0", scale: activeLed === 2 ? 1.2 : 1 }}
+                transition={{ duration: 0.15 }}
+              />
+              <motion.circle cx="110" cy="162" r="6"
+                animate={{ fill: activeLed === 3 || isCheer ? "#facc15" : "#bbf7d0", scale: activeLed === 3 ? 1.2 : 1 }}
+                transition={{ duration: 0.15 }}
+              />
+
+              {/* Progress bar */}
+              <rect x="62" y="175" width="56" height="7" rx="3.5" fill="#15803d"/>
+              <motion.rect
+                x="62" y="175" height="7" rx="3.5"
+                animate={{ width: isCheer ? 56 : state === "think" ? 36 : state === "sad" ? 14 : 30, fill: isCheer ? "#facc15" : "#bbf7d0" }}
+                transition={{ type: "spring", stiffness: 120, damping: 20 }}
+              />
+            </motion.g>
+          </motion.g>
+
+          {/* ── Left Arm ── */}
+          <motion.g
+            style={{ originX: "23px", originY: "155px" }}
+            variants={leftArmVariants}
+            animate={state}
+          >
+            <motion.g animate={{ y: breathY * 0.9 }}>
+              <rect x="10" y="136" width="26" height="52" rx="13" fill="#22c55e" stroke="#16a34a" strokeWidth="3"/>
+              <circle cx="23" cy="195" r="10" fill="#16a34a" stroke="#15803d" strokeWidth="2"/>
+            </motion.g>
+          </motion.g>
+
+          {/* ── Right Arm ── */}
+          <motion.g
+            style={{ originX: "157px", originY: "155px" }}
+            variants={rightArmVariants}
+            animate={state}
+          >
+            <motion.g animate={{ y: breathY * 0.9 }}>
+              <rect x="144" y="136" width="26" height="52" rx="13" fill="#22c55e" stroke="#16a34a" strokeWidth="3"/>
+              <circle cx="157" cy="195" r="10" fill="#16a34a" stroke="#15803d" strokeWidth="2"/>
+            </motion.g>
+          </motion.g>
+
+          {/* ── Legs ── */}
+          <g>
+            <motion.g animate={{ y: breathY * 0.5 }}>
+              <rect x="55" y="200" width="28" height="18" rx="6" fill="#15803d"/>
+              <rect x="50" y="212" width="36" height="8" rx="4" fill="#16a34a" stroke="#15803d" strokeWidth="1.5"/>
+              <rect x="97" y="200" width="28" height="18" rx="6" fill="#15803d"/>
+              <rect x="94" y="212" width="36" height="8" rx="4" fill="#16a34a" stroke="#15803d" strokeWidth="1.5"/>
+            </motion.g>
+          </g>
+
+          {/* ── Sparkles (cheer only) ── */}
+          <AnimatePresence>
+            {isCheer && (
+              <motion.g key="sparkles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <Sparkle x={38}  y={52} delay={0}    size={16}/>
+                <Sparkle x={140} y={44} delay={0.18} size={20}/>
+                <Sparkle x={158} y={82} delay={0.32} size={13}/>
+                <Sparkle x={20}  y={88} delay={0.12} size={13}/>
+                <Sparkle x={88}  y={22} delay={0.25} size={12}/>
+                {state === "celebrate" && <>
+                  <Sparkle x={6}   y={130} delay={0.08} size={15}/>
+                  <Sparkle x={166} y={118} delay={0.38} size={18}/>
+                  <Sparkle x={92}  y={8}   delay={0.44} size={14}/>
+                </>}
+              </motion.g>
+            )}
+          </AnimatePresence>
+        </motion.g>
+      </svg>
+    </div>
+  );
+});
+
+export default Byte;
+
+// ─── Usage example (dev preview) ─────────────────────────────────────────────
+// import Byte, { ByteState } from "./Byte";
+//
+// <Byte state="idle" size={180} showSpeech onStateEnd={() => setState("idle")} />
+//
+// state: "idle" | "think" | "cheer" | "sad" | "celebrate"
+// onStateEnd fires after "sad" auto-completes → use to return to idle

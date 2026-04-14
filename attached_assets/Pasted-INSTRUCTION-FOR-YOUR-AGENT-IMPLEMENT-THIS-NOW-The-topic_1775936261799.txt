@@ -1,0 +1,69 @@
+INSTRUCTION FOR YOUR AGENT — IMPLEMENT THIS NOW
+The topicName variable already exists in the store. The problem is it is only used in Byte's speech bubbles. It needs to be injected into the starting code of every lesson step and into the instruction text itself.
+Lesson 1, Step 1 — before:
+Instruction: "Type <html></html>"
+Starting code: ""
+Lesson 1, Step 1 — after:
+Instruction: "Every webpage starts with a container.
+Type this to begin building your [Minecraft] page:"
+
+Starting code: ""
+Lesson 1, Step 5 — before:
+Instruction: "Put something inside your body tags"
+Starting code: "<html><head><title>My Page</title></head><body></body></html>"
+Lesson 1, Step 5 — after:
+Instruction: "NOW put your topic in the body so people can see it!"
+Starting code: "<html>
+  <head>
+    <title>Minecraft</title>
+  </head>
+  <body>
+    <h1>Minecraft</h1>
+  </body>
+</html>"
+The title tag and h1 are pre-filled with their topic. The kid opens Lesson 1 Step 5 and their page already has their word in it. They are not building a generic demo — they are building THEIR page.
+
+The deeper fix — three rules your agent must follow:
+Rule 1: Every startingCode after Step 2 contains the topic name.
+From the moment the page has any content in it, that content is about their topic. Not "Hello World." Not "My Page." <title>Minecraft</title>. <h1>Minecraft</h1>. The topic is baked into the scaffold from the first line of code the kid sees.
+Rule 2: Every instruction string is a template, not static text.
+Change the lesson data from:
+typescriptinstruction: "Add a big heading to your page"
+To:
+typescriptinstruction: (topic: string) => `Add a big heading about ${topic} to your page`
+Or if your agent prefers string interpolation at render time:
+typescriptinstruction: "Add a big heading about {topic} to your page"
+// → Rendered as: "Add a big heading about Minecraft to your page"
+Pick one pattern and apply it to every instruction in every step.
+Rule 3: Byte's step-load message references the topic every time.
+BEFORE: "h1 is the biggest heading on the page."
+AFTER:  "h1 is the biggest heading on the page. Make yours scream MINECRAFT."
+
+What this looks like in the actual Lesson 2 warm-up — concrete example:
+Warm-up instruction (topic = Minecraft):
+"Quick warm-up before we start!
+
+Build a Minecraft page skeleton — html, head, and body.
+Put one heading about Minecraft inside the body.
+You already know how to do this."
+
+Starting code: ""
+
+Validator: doc.querySelector('h1')?.textContent
+  → Must exist AND must not be empty
+  → Does NOT need to contain "Minecraft" — the instruction points them there
+    but we never punish for creative choices
+The validator never enforces topic relevance. The instruction and starting code guide them toward it. The kid can type <h1>I love creepers</h1> and it passes. That is correct. The point is that every instruction is about their thing, not that we check for it.
+
+The one thing that will actually make kids feel it:
+Step 5 of Lesson 1 — when they first put content in the body — the starting code must already have their topic pre-filled. The kid opens that step and sees:
+html<html>
+  <head>
+    <title>Minecraft</title>
+  </head>
+  <body>
+    <h1>Minecraft</h1>
+  </body>
+</html>
+They did not type that. You gave it to them. Their reaction is "wait — it already has MY thing in it." That is the moment the relevance clicks. From then on they are not doing an exercise. They are decorating something that already belongs to them.
+The onboarding promise was "we are going to build a webpage about Minecraft." Step 5 of Lesson 1 is where that promise is kept for the first time. Make sure your agent knows that step 5's starting code is dynamically generated from topicName — it is not a static string in the lesson file.

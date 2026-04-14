@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 0 140 140" role="img" aria-label="Code4Kidz — Byte">
+  <title>Code4Kidz — Byte</title>
+  <defs>
+    <linearGradient id="tabBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="55%" stop-color="#1a0a3d"/>
+      <stop offset="100%" stop-color="#0d2040"/>
+    </linearGradient>
+    <linearGradient id="antennaOrb" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+  <!-- Tab-safe rounded tile -->
+  <rect x="20" y="0" width="140" height="140" rx="36" fill="url(#tabBg)"/>
+  <!-- Byte face (idle pose — matches Byte.tsx SVG) -->
+  <g transform="translate(0, 2)">
+    <!-- Antenna -->
+    <line x1="90" y1="18" x2="90" y2="38" stroke="#16a34a" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="90" cy="12" r="9" fill="url(#antennaOrb)" stroke="#16a34a" stroke-width="2"/>
+    <circle cx="90" cy="12" r="4" fill="#bbf7d0" opacity="0.85"/>
+    <!-- Head -->
+    <rect x="30" y="38" width="120" height="90" rx="22" fill="#22c55e" stroke="#16a34a" stroke-width="3"/>
+    <!-- Eye sockets -->
+    <rect x="46" y="58" width="34" height="26" rx="8" fill="#16a34a" opacity="0.35"/>
+    <rect x="100" y="58" width="34" height="26" rx="8" fill="#16a34a" opacity="0.35"/>
+    <!-- Left eye -->
+    <ellipse cx="63" cy="71" rx="12" ry="9" fill="#2d6e30" opacity="0.85"/>
+    <circle cx="63" cy="71" r="10" fill="#ffffff"/>
+    <circle cx="65" cy="72" r="5" fill="#1A1A2E"/>
+    <circle cx="67" cy="69" r="3" fill="#ffffff" opacity="0.95"/>
+    <!-- Right eye -->
+    <ellipse cx="117" cy="71" rx="12" ry="9" fill="#2d6e30" opacity="0.85"/>
+    <circle cx="117" cy="71" r="10" fill="#ffffff"/>
+    <circle cx="119" cy="72" r="5" fill="#1A1A2E"/>
+    <circle cx="121" cy="69" r="3" fill="#ffffff" opacity="0.95"/>
+    <!-- Smile -->
+    <path d="M72 103 Q90 115 108 103" fill="none" stroke="#15803d" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -1,0 +1,52 @@
+Here’s the full technical breakdown:
+
+Fonts
+3 typefaces, each with a specific job:
+1. Poppins — font-family: 'Poppins', sans-serif
+
+Loaded from Google Fonts with weights: 400, 500, 600, 700, 800, 900
+Used via Tailwind class font-poppins
+Role: All headings, titles, buttons, labels, XP numbers, nav items — anything that needs to feel bold and authoritative
+Why: Poppins is a geometric sans-serif with perfectly circular letterforms. At font-900 it hits hard and reads great at large sizes. Very popular in edtech/gaming UI
+Example usage:font-poppins font-800 text-4xl on the hero H1, font-poppins font-700 on all buttons
+2. Quicksand — font-family: 'Quicksand', sans-serif
+
+Loaded with weights: 400, 500, 600, 700
+Used via font-quicksand
+Role: Body copy, descriptions, subtitles, footer text, card paragraphs — anything conversational
+Why: Quicksand is a rounded sans-serif with soft terminals (the ends of strokes are rounded, not sharp). This makes it feel friendly and approachable — perfect for kids reading instructions
+Example usage:font-quicksand text-lg text-gray-500 on section subtitles
+3. JetBrains Mono — font-family: 'JetBrains Mono', monospace
+
+Loaded with weights: 400, 500, 600
+Used via font-mono
+Role: The code editor panel, syntax-highlighted code, the floating particle symbols in the hero
+Why: JetBrains Mono is a purpose-built coding font with wide letter spacing and clear distinction between similar characters (0 vs O, l vs 1). It also has ligatures. Kids reading code need maximum clarity
+Example usage: The lesson editor’s center panel, <h1> tags in the floating particles
+Colors
+Custom kidz palette (defined in tailwind.config.ts):
+Token	Hex	HSL	Usage
+kidz-teal	#00D9C0	hsl(174, 100%, 43%)	Primary brand accent, glow effects
+kidz-purple	#8B5CF6	hsl(258, 88%, 66%)	Secondary accent, evolution modal, badges
+kidz-yellow	#FFD93D	hsl(46, 100%, 62%)	XP rewards, stars, CTA highlights
+kidz-pink	#FF6B9D	hsl(336, 100%, 71%)	Hearts system, sad state, love/life UI
+kidz-coral	#FF6B6B	hsl(0, 100%, 71%)	Error states, streak fire, warnings
+kidz-navy	#1A202C	hsl(217, 28%, 15%)	Dark backgrounds, code editor bg
+Extended Tailwind teal overrides:
+Token	Hex	Notes
+teal-400	#2DD4BF	Overrides Tailwind default — slightly more saturated
+teal-500	#14B8A6	Main teal — used on CTA section background
+teal-600	#0D9488	Hover/darker teal states
+Tailwind defaults also in heavy use:
+Grays:gray-800(#1F2937) for footer, gray-500(#6B7280) for body text, gray-400 for disabled/locked states
+Violet:violet-50(#F5F3FF) — page background base, violet-900 for hero overlay
+Purple:purple-50 through purple-600 — lesson path section, evolution teaser card
+Indigo:indigo-700(#4338CA) — evolution teaser gradient end
+Yellow/Orange:yellow-400(#FACC15) → orange-400(#FB923C) — gradient on primary CTA button
+Pink/Rose:pink-400 → rose-400 — hearts feature card gradient
+Color application strategy:
+Page base:bg-gradient-to-br from-violet-50 via-white to-teal-50 — barely-there lavender-to-mint, almost white
+Hero overlay:from-slate-900/75 via-indigo-950/60 to-teal-950/70 — deep navy with 60–75% opacity sitting over the neon city image
+Particle colors cycle through: #2DD4BF (teal), #a78bfa (soft purple), #FFD93D (yellow), #FF6B9D (pink), #ffffff (white)
+Semantic color logic: teal = success/progress, yellow = rewards/XP, pink = lives/hearts, purple = evolution/power, coral = errors/mistakes
+TL;DR: Poppins punches, Quicksand chats, JetBrains codes. The palette is a neon-candy system — high saturation primaries on dark overlays, pastel tints on light backgrounds. Very deliberate split between “game UI” colors (yellow, teal, pink) and “reading comfort” neutrals (gray-500, white, violet-50).

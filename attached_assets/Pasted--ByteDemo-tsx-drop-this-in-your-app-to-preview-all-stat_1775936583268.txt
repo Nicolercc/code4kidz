@@ -1,0 +1,72 @@
+// ByteDemo.tsx — drop this in your app to preview all states
+// pnpm add framer-motion (already in your stack)
+
+import { useState } from "react";
+import Byte, { ByteState } from "./Byte";
+
+const STATES: ByteState[] = ["idle", "think", "cheer", "sad", "celebrate"];
+
+const STATE_META: Record<ByteState, { emoji: string; label: string; color: string }> = {
+  idle:      { emoji: "😊", label: "Idle",      color: "#22c55e" },
+  think:     { emoji: "🤔", label: "Thinking",  color: "#3b82f6" },
+  cheer:     { emoji: "🎉", label: "Cheer",     color: "#f59e0b" },
+  sad:       { emoji: "😞", label: "Sad",       color: "#ef4444" },
+  celebrate: { emoji: "👑", label: "Legend!",   color: "#a855f7" },
+};
+
+export default function ByteDemo() {
+  const [state, setState] = useState<ByteState>("idle");
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#0f172a",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 48,
+      fontFamily: "system-ui, -apple-system, sans-serif",
+    }}>
+      <div style={{ position: "relative", paddingTop: 64 }}>
+        <Byte
+          state={state}
+          size={200}
+          showSpeech
+          onStateEnd={() => setState("idle")}
+        />
+      </div>
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+        {STATES.map((s) => {
+          const meta = STATE_META[s];
+          const active = state === s;
+          return (
+            <button
+              key={s}
+              onClick={() => setState(s)}
+              style={{
+                padding: "10px 22px",
+                borderRadius: 999,
+                border: active ? `2px solid ${meta.color}` : "2px solid rgba(255,255,255,0.12)",
+                background: active ? `${meta.color}22` : "rgba(255,255,255,0.05)",
+                color: active ? meta.color : "rgba(255,255,255,0.7)",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                letterSpacing: "0.01em",
+              }}
+            >
+              {meta.emoji} {meta.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 13, letterSpacing: "0.05em" }}>
+        CODE4KIDZ · BYTE v1.0
+      </p>
+    </div>
+  );
+}

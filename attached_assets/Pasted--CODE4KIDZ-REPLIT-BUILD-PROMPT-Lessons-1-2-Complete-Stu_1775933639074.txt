@@ -1,0 +1,1452 @@
+# CODE4KIDZ — REPLIT BUILD PROMPT
+# Lessons 1 & 2: Complete Student Flow
+# Senior Engineer + Project Manager Spec
+# Version: 1.0 | April 2026
+
+---
+
+## WHAT YOU ARE BUILDING
+
+A working React + TypeScript web app called Code4Kidz.
+This is the Duolingo for coding — a gamified, mascot-guided browser app that teaches
+kids ages 7-10 to write real HTML and CSS through short, animated lessons.
+
+You are building the COMPLETE student experience from the moment they land on the
+onboarding screen through finishing Lesson 1 and completing Lesson 2.
+
+Every piece of copy, every Byte quote, every validator, every animation state,
+and every transition is specified in this document. Do not improvise.
+If something is not specified, ask before building.
+
+---
+
+## TECH STACK — USE EXACTLY THESE
+
+- React 18 + TypeScript (strict mode)
+- Vite (not CRA)
+- Zustand (global state — no Redux, no Context)
+- Tailwind CSS (utility classes only — no CSS modules, no styled-components)
+- Framer Motion (all animations — no CSS animations except where specified)
+- CodeMirror 6 (@codemirror/view + @codemirror/lang-html only)
+- canvas-confetti (lesson completion)
+- Howler.js (sound effects)
+- React Router v6 (/onboarding → /map → /lesson/1 → /review/1 → /complete/1 → /lesson/2 → ...)
+
+Install command:
+npm create vite@latest code4kidz -- --template react-ts
+npm install zustand framer-motion @codemirror/view @codemirror/lang-html \
+  @codemirror/state @codemirror/basic-setup canvas-confetti howler \
+  react-router-dom tailwindcss @tailwindcss/vite
+
+---
+
+## BRAND TOKENS — HARDCODE THESE IN tailwind.config.ts
+
+colors:
+  purple:    #5C3EBC   ← primary brand, Byte, lesson headers
+  purpleL:   #EDE9FB   ← lesson panel background
+  purpleP:   #F6F4FE   ← subtle backgrounds
+  orange:    #D4581A   ← XP pop, CTA buttons, streak fire
+  orangeL:   #FEF0D6   ← hint backgrounds
+  green:     #1A7A4E   ← success states, validator pass
+  greenL:    #D6F5E8   ← review pass backgrounds
+  teal:      #0D7C7B   ← correct flash, leaderboard
+  red:       #B33A1C   ← hearts, errors, sad byte
+  redL:      #FDECE6   ← error backgrounds
+  pink:      #8C2060   ← Byte story mood
+  pinkL:     #FAE8F3   ← story bubble background
+  gold:      #7A5C00   ← perfect lesson, badges
+  goldL:     #FFF8D6   ← gold star backgrounds
+  bg:        #F8F7F4   ← page background (warm off-white)
+  dark:      #111111   ← body text
+  mid:       #444441   ← secondary text
+  muted:     #777775   ← captions, step numbers
+  border:    #DEDCD7   ← all borders
+
+font-size for editor: 18px MINIMUM — this is non-negotiable for ages 7-10
+
+---
+
+## FILE STRUCTURE — CREATE ALL OF THESE
+
+code4kidz/
+├── src/
+│   ├── main.tsx
+│   ├── App.tsx                    ← Router setup only
+│   ├── store/
+│   │   └── gameStore.ts           ← ALL global state lives here
+│   ├── data/
+│   │   └── lessons/
+│   │       ├── lesson-01.ts       ← Lesson 1 complete data object
+│   │       └── lesson-02.ts       ← Lesson 2 complete data object
+│   ├── components/
+│   │   ├── Byte.tsx               ← Mascot with all 5 mood states
+│   │   ├── Editor.tsx             ← CodeMirror wrapper
+│   │   ├── Preview.tsx            ← iframe srcdoc live preview
+│   │   ├── LessonPanel.tsx        ← Left panel: Byte + instructions
+│   │   ├── HeartBar.tsx           ← 3 hearts in header
+│   │   ├── XPCounter.tsx          ← XP display with pop animation
+│   │   ├── StreakBadge.tsx        ← Fire emoji + streak number
+│   │   ├── StepProgress.tsx       ← "Step 2 of 5" indicator
+│   │   ├── HintButton.tsx         ← Reveals hint after 2 fails
+│   │   └── WarmUpStep.tsx         ← Pre-lesson 60-second review
+│   ├── pages/
+│   │   ├── OnboardingPage.tsx     ← 4-screen topic capture flow
+│   │   ├── MapPage.tsx            ← Skill tree with 10 nodes
+│   │   ├── LessonPage.tsx         ← 3-panel editor layout
+│   │   ├── ReviewPage.tsx         ← Post-lesson mistake redo
+│   │   └── CompletePage.tsx       ← Celebration + confetti
+│   └── utils/
+│       ├── validator.ts           ← validate(iframe, step) function
+│       └── sounds.ts              ← Howler sound setup
+├── public/
+│   └── assets/
+│       └── mascot/
+│           ├── byte-idle.svg
+│           ├── byte-cheer.svg
+│           ├── byte-think.svg
+│           ├── byte-sad.svg
+│           └── byte-story.svg
+└── tailwind.config.ts
+
+---
+
+## GLOBAL STATE — gameStore.ts
+
+Build this FIRST. Every other file depends on it.
+
+```typescript
+// store/gameStore.ts
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+
+export type MascotMood = 'idle' | 'cheer' | 'think' | 'sad' | 'story'
+
+export interface MistakeEntry {
+  stepId: string
+  failCount: number
+  instruction: string
+  startingCode: string
+}
+
+interface GameState {
+  // Identity
+  topicName: string          // Set during onboarding. Used in ALL Byte lines.
+  classroomCode: string      // Optional — set if facilitator gave a code
+
+  // Progress
+  currentLessonId: string    // 'lesson-01' | 'lesson-02' etc
+  completedLessons: string[] // Array of completed lesson IDs
+  currentStepIndex: number   // 0 = warm-up, 1-5 = challenge steps
+
+  // Gamification
+  xp: number
+  hearts: number             // 0-3, refills between lessons
+  streak: number
+  lastPlayedDate: string     // ISO date string
+
+  // Lesson state
+  code: string               // Current editor value
+  failCount: number          // Resets on each new step
+  hintsUsed: number          // Resets on each new step
+  mascotMood: MascotMood
+  byteMessage: string        // Current speech bubble text
+
+  // Mistake tracking (session only — NOT persisted)
+  mistakeLog: Record<string, MistakeEntry[]>
+
+  // Actions
+  setTopic: (name: string) => void
+  setClassroomCode: (code: string) => void
+  gainXP: (amount: number) => void
+  loseHeart: () => void
+  refillHearts: () => void
+  advanceStep: () => void
+  resetToStep: (index: number) => void
+  updateCode: (code: string) => void
+  incrementFail: () => void
+  resetFail: () => void
+  setMascotMood: (mood: MascotMood, message: string) => void
+  recordMistake: (lessonId: string, entry: MistakeEntry) => void
+  clearMistakeLog: (lessonId: string) => void
+  markLessonComplete: (lessonId: string) => void
+  checkAndUpdateStreak: () => void
+}
+
+// Persist everything EXCEPT mistakeLog (session-only, privacy by design)
+export const useGameStore = create<GameState>()(
+  persist(
+    (set, get) => ({
+      topicName: '',
+      classroomCode: '',
+      currentLessonId: 'lesson-01',
+      completedLessons: [],
+      currentStepIndex: 0,
+      xp: 0,
+      hearts: 3,
+      streak: 0,
+      lastPlayedDate: '',
+      code: '',
+      failCount: 0,
+      hintsUsed: 0,
+      mascotMood: 'idle',
+      byteMessage: '',
+      mistakeLog: {},
+
+      setTopic: (name) => set({ topicName: name }),
+      setClassroomCode: (code) => set({ classroomCode: code }),
+
+      gainXP: (amount) => set((s) => ({ xp: s.xp + amount })),
+
+      loseHeart: () => set((s) => ({
+        hearts: Math.max(0, s.hearts - 1),
+        mascotMood: 'sad',
+        byteMessage: s.hearts === 1
+          ? "That was your last heart. Take a breath — you can try again tomorrow with full hearts!"
+          : "Oops! That is okay. Every coder gets this wrong sometimes."
+      })),
+
+      refillHearts: () => set({ hearts: 3 }),
+
+      advanceStep: () => set((s) => ({
+        currentStepIndex: s.currentStepIndex + 1,
+        failCount: 0,
+        hintsUsed: 0,
+        code: '',
+      })),
+
+      resetToStep: (index) => set({ currentStepIndex: index, failCount: 0, hintsUsed: 0 }),
+
+      updateCode: (code) => set({ code }),
+
+      incrementFail: () => set((s) => ({ failCount: s.failCount + 1 })),
+
+      resetFail: () => set({ failCount: 0, hintsUsed: 0 }),
+
+      setMascotMood: (mood, message) => set({ mascotMood: mood, byteMessage: message }),
+
+      recordMistake: (lessonId, entry) => set((s) => ({
+        mistakeLog: {
+          ...s.mistakeLog,
+          [lessonId]: [...(s.mistakeLog[lessonId] ?? []), entry]
+        }
+      })),
+
+      clearMistakeLog: (lessonId) => set((s) => {
+        const log = { ...s.mistakeLog }
+        delete log[lessonId]
+        return { mistakeLog: log }
+      }),
+
+      markLessonComplete: (lessonId) => set((s) => ({
+        completedLessons: [...s.completedLessons, lessonId],
+        currentStepIndex: 0,
+        hearts: 3,         // refill hearts between lessons
+        failCount: 0,
+        hintsUsed: 0,
+        code: '',
+      })),
+
+      checkAndUpdateStreak: () => {
+        const today = new Date().toDateString()
+        const { lastPlayedDate, streak } = get()
+        if (lastPlayedDate === today) return
+        const yesterday = new Date(Date.now() - 86400000).toDateString()
+        const maintained = lastPlayedDate === yesterday
+        set({
+          streak: maintained ? streak + 1 : 1,
+          lastPlayedDate: today,
+        })
+      },
+    }),
+    {
+      name: 'code4kidz-store',
+      partialize: (s) => {
+        const { mistakeLog, ...rest } = s  // NEVER persist mistakeLog
+        return rest
+      }
+    }
+  )
+)
+```
+
+---
+
+## LESSON DATA — COMPLETE OBJECTS
+
+### lesson-01.ts — SAY HELLO TO THE WEB
+
+```typescript
+// data/lessons/lesson-01.ts
+
+export interface LessonStep {
+  id: string
+  type: 'warmup' | 'write' | 'fix' | 'identify' | 'combine'
+  instruction: string          // What the kid reads
+  bytePrompt: string           // What Byte says when this step loads
+  hint: string                 // Revealed after 2 wrong attempts
+  startingCode: string         // Pre-filled in the editor (empty for write steps)
+  xp: number                   // 0 for warmup, 10 for first-try, 5 if hints used
+  validate: (doc: Document) => boolean
+}
+
+export interface Lesson {
+  id: string
+  lessonNumber: number
+  title: string
+  emoji: string
+  xpReward: number             // Bonus XP on lesson completion
+  byteIntro: string            // First thing Byte says when lesson loads
+  byteStoryMoment: string      // Byte's personal confession (pink story bubble)
+  steps: LessonStep[]
+  celebrationQuote: string     // Byte's quote on the CompletePage
+}
+
+export const lesson01: Lesson = {
+  id: 'lesson-01',
+  lessonNumber: 1,
+  title: 'Say Hello to the Web!',
+  emoji: '👋',
+  xpReward: 50,
+
+  byteIntro: `Hey! I am Byte — your robot coding buddy!
+Today you are going to make your FIRST ever webpage.
+Millions of people will be able to see things you make.
+Let us start RIGHT NOW.`,
+
+  byteStoryMoment: `I have wanted to make my own webpage for SO long.
+I tried once and the whole thing was just a blank screen.
+I think this time will be different. Because this time I have you.`,
+
+  celebrationQuote: `YOU DID IT!
+That is the exact same code that Google.com uses.
+You are not pretending to code. You ARE coding.
+I am so proud of us.`,
+
+  steps: [
+    // ── STEP 0: WARM-UP (no hearts at risk, always passes after 1 attempt) ──
+    {
+      id: 'warmup',
+      type: 'warmup',
+      instruction: `No warm-up for Lesson 1 — this IS the warm-up!
+Just open and start. Byte is right here with you.`,
+      bytePrompt: `This is your first time here, so we jump straight in.
+No review yet — that comes in Lesson 2.
+Ready? Let us build something real.`,
+      hint: '',
+      startingCode: '',
+      xp: 0,
+      validate: () => true   // Always passes
+    },
+
+    // ── STEP 1: WRITE — The container ──
+    {
+      id: 'step-1',
+      type: 'write',
+      instruction: `Every webpage on the internet starts with a container.
+Type this in the editor on the right:
+
+<html></html>
+
+Watch what happens in the preview!`,
+      bytePrompt: `This one tag — html — is the very first thing on EVERY website.
+YouTube starts with it. Roblox starts with it. Now yours does too.`,
+      hint: `It starts with < and ends with >. The word inside is html.
+Opening: <html>  Closing: </html>
+The / in the closing tag tells the browser where it ends.`,
+      startingCode: '',
+      xp: 10,
+      validate: (doc) => doc.querySelector('html') !== null
+    },
+
+    // ── STEP 2: WRITE — The head ──
+    {
+      id: 'step-2',
+      type: 'write',
+      instruction: `Great! Now add a head section INSIDE your html tags.
+The head holds secret info about the page.
+
+Type this inside your <html> tags:
+<head></head>`,
+      bytePrompt: `The head is like your brain — people cannot see it, but it controls everything.
+Tab titles, page settings — all of that lives in the head.`,
+      hint: `The head tag goes inside the html tags.
+It should look like this:
+<html>
+  <head></head>
+</html>
+Notice it is INSIDE — between the opening and closing html tags.`,
+      startingCode: '<html>\n  \n</html>',
+      xp: 10,
+      validate: (doc) => doc.querySelector('head') !== null
+    },
+
+    // ── STEP 3: WRITE — The title ──
+    {
+      id: 'step-3',
+      type: 'write',
+      instruction: `Now give your page a name!
+Inside your <head> tags, type:
+
+<title>My Amazing Page</title>
+
+Change "My Amazing Page" to anything you want!
+Tip: it will appear in the browser tab.`,
+      bytePrompt: `The title is what shows up in the little tab at the top of the browser.
+Go ahead — make it yours. Your name, your topic, anything.
+I love seeing what people choose.`,
+      hint: `The title goes INSIDE the head tags. Like this:
+<head>
+  <title>Whatever you want here</title>
+</head>
+Make sure it has a / in the closing tag: </title>`,
+      startingCode: '<html>\n  <head>\n    \n  </head>\n</html>',
+      xp: 10,
+      validate: (doc) => {
+        const title = doc.querySelector('title')
+        return title !== null && (title.textContent?.length ?? 0) > 0
+      }
+    },
+
+    // ── STEP 4: FIX — The body (bug: missing closing tag) ──
+    {
+      id: 'step-4',
+      type: 'fix',
+      instruction: `Something is broken here! Can you find the mistake?
+
+Byte tried to add a body section — the part people actually SEE —
+but something is wrong. Fix it so the body tag works correctly.`,
+      bytePrompt: `Uh oh... I made a mistake in my code. Can you find it?
+Look carefully at the body tag. Something is missing.
+Every opening tag needs a closing partner!`,
+      hint: `Every HTML tag comes in pairs — one that opens and one that closes.
+The closing tag has a / before the word.
+Look at the body tags: does one of them have a / and the other does not?`,
+      startingCode: `<html>
+  <head>
+    <title>My Page</title>
+  </head>
+  <body>
+    Hello world!
+  <body>
+</html>`,
+      xp: 10,
+      validate: (doc) => doc.querySelector('body') !== null
+    },
+
+    // ── STEP 5: COMBINE — First words on screen ──
+    {
+      id: 'step-5',
+      type: 'combine',
+      instruction: `NOW the exciting part!
+
+Put something inside your <body> tags so people can actually see it.
+Type this inside your body:
+
+<h1>Hello, World!</h1>
+
+Change "Hello, World!" to anything — your name, your topic!
+Watch the preview on the right!`,
+      bytePrompt: `This is the moment. When you add words inside the body — people can SEE them.
+Not just you. Anyone who visits your page.
+Go ahead. Put YOUR words on the internet for the first time.`,
+      hint: `The h1 tag goes INSIDE your body tags.
+<body>
+  <h1>Your words go here</h1>
+</body>
+h1 means Heading 1 — the biggest, most important text on the page.
+You should see it appear in the preview the moment you type it.`,
+      startingCode: `<html>
+  <head>
+    <title>My Page</title>
+  </head>
+  <body>
+    
+  </body>
+</html>`,
+      xp: 10,
+      validate: (doc) => {
+        const h1 = doc.querySelector('h1')
+        return h1 !== null && (h1.textContent?.length ?? 0) > 0
+      }
+    },
+  ]
+}
+```
+
+---
+
+### lesson-02.ts — MAKE A BIG TITLE
+
+```typescript
+// data/lessons/lesson-02.ts
+import type { Lesson } from './lesson-01'
+
+export const lesson02: Lesson = {
+  id: 'lesson-02',
+  lessonNumber: 2,
+  title: 'Make a Big Title!',
+  emoji: '🔤',
+  xpReward: 50,
+
+  byteIntro: `You came back! Your streak is going!
+Today we make your page look like it MEANS something.
+Big titles. Small subtitles. Real hierarchy.
+This is what every website, every newspaper, every app uses.`,
+
+  byteStoryMoment: `Fun fact: the first heading I ever tried to make came out this big.
+[imagine tiny tiny text]
+I thought I had broken the whole internet.
+Turns out I just needed an h1 instead of an h6. Now you will know that too.`,
+
+  celebrationQuote: `Look at those headings getting smaller as the numbers go up!
+That is called hierarchy.
+Real web designers use exactly this every single day.
+And now so do you.`,
+
+  steps: [
+    // ── STEP 0: WARM-UP (60 seconds, no hearts, reviews Lesson 1) ──
+    {
+      id: 'warmup',
+      type: 'warmup',
+      instruction: `Quick warm-up before we start! 60 seconds.
+
+Show Byte you still remember Lesson 1.
+Type a complete HTML page structure:
+html tags, head tags, body tags — and put ONE heading inside the body.
+
+You have done this before. You have got this.`,
+      bytePrompt: `Before new stuff — let us make sure the old stuff is locked in.
+Show me an html page with a body. One heading inside.
+I know you remember. Go ahead.`,
+      hint: `Start with <html>, then <head></head>, then <body></body>.
+Inside the body — add <h1>anything you want</h1>.
+You already know this from Lesson 1!`,
+      startingCode: '',
+      xp: 10,     // Warm-up bonus XP
+      validate: (doc) =>
+        doc.querySelector('html') !== null &&
+        doc.querySelector('body') !== null &&
+        doc.querySelector('h1') !== null
+    },
+
+    // ── STEP 1: WRITE — h1 about their topic ──
+    {
+      id: 'step-1',
+      type: 'write',
+      instruction: `Let us build on your page!
+
+Add a big main heading about YOUR topic.
+Inside your <body> tags, type:
+
+<h1>Your topic here</h1>
+
+Make it about whatever YOU chose at the start — make it yours!`,
+      bytePrompt: `h1 is the BIGGEST heading. The most important thing on the page.
+Newspapers put the most important story in the biggest font.
+Websites do the same thing. What is the most important thing about your topic?`,
+      hint: `An h1 tag looks like this:
+<h1>Your words here</h1>
+The number after h tells you how big it is. h1 = biggest.
+It goes inside your body tags.`,
+      startingCode: `<html>
+  <head>
+    <title>My Page</title>
+  </head>
+  <body>
+    
+  </body>
+</html>`,
+      xp: 10,
+      validate: (doc) => {
+        const h1 = doc.querySelector('h1')
+        return h1 !== null && (h1.textContent?.length ?? 0) > 0
+      }
+    },
+
+    // ── STEP 2: PERSONALIZE — h2 below h1 ──
+    {
+      id: 'step-2',
+      type: 'write',
+      instruction: `Now add a smaller subtitle BELOW your h1.
+
+An h2 is smaller than h1 — it is for subtitles, sections, supporting info.
+
+Below your h1, add:
+<h2>A fact or subtitle about your topic</h2>`,
+      bytePrompt: `h2 is smaller than h1 — it is the subtitle.
+Like how a book has a big title and then a smaller description underneath.
+What is one interesting thing about your topic?`,
+      hint: `The h2 tag goes AFTER your h1, inside the body:
+<body>
+  <h1>Main Title</h1>
+  <h2>Subtitle or fact here</h2>
+</body>
+Notice how it gets smaller? That is the hierarchy working!`,
+      startingCode: `<html>
+  <head><title>My Page</title></head>
+  <body>
+    <h1>My Topic</h1>
+    
+  </body>
+</html>`,
+      xp: 10,
+      validate: (doc) => {
+        const h2 = doc.querySelector('h2')
+        return h2 !== null && (h2.textContent?.length ?? 0) > 0
+      }
+    },
+
+    // ── STEP 3: IDENTIFY — h3 for detail ──
+    {
+      id: 'step-3',
+      type: 'identify',
+      instruction: `Now the smallest heading — h3.
+
+It is for details, small labels, third-level info.
+
+Add an h3 BELOW your h2:
+<h3>One small detail about your topic</h3>
+
+Then look at all three headings in the preview.
+See how they get smaller? That is hierarchy!`,
+      bytePrompt: `Look at this:
+h1 = BIGGEST (most important)
+h2 = Medium (supporting)
+h3 = Small (detail)
+
+This is exactly how every real website organizes information.
+The New York Times website? Same thing.`,
+      hint: `Add an h3 after your h2:
+<h2>Your subtitle</h2>
+<h3>A small detail here</h3>
+See the pattern? The numbers go up, the text gets smaller.`,
+      startingCode: `<html>
+  <head><title>My Page</title></head>
+  <body>
+    <h1>My Topic</h1>
+    <h2>Interesting fact</h2>
+    
+  </body>
+</html>`,
+      xp: 10,
+      validate: (doc) => doc.querySelector('h3') !== null
+    },
+
+    // ── STEP 4: FIX — Missing slash in closing h2 tag ──
+    {
+      id: 'step-4',
+      type: 'fix',
+      instruction: `Byte made a mistake again! Can you find it?
+
+There is a broken heading below.
+One of the tags is wrong — it is not closing properly.
+Find the problem and fix it!`,
+      bytePrompt: `Okay I will admit it — I typed too fast and made an error.
+Something is wrong with one of these heading tags.
+Look at the closing tags carefully. Do they all have a / in them?`,
+      hint: `Every closing tag needs a forward slash / before the tag name.
+<h2>This is correct</h2>   ← has the /
+<h2>This is broken<h2>    ← missing the /
+Look at each closing tag. Which one is missing its slash?`,
+      startingCode: `<html>
+  <head><title>My Page</title></head>
+  <body>
+    <h1>My Favorite Topic</h1>
+    <h2>Why I love it<h2>
+    <h3>One small fact</h3>
+  </body>
+</html>`,
+      xp: 10,
+      validate: (doc) => {
+        const headings = doc.querySelectorAll('h2')
+        return headings.length >= 1
+      }
+    },
+
+    // ── STEP 5: COMBINE — Second h2, full hierarchy ──
+    {
+      id: 'step-5',
+      type: 'combine',
+      instruction: `Final step! Add one MORE h2 below everything else.
+
+This time — make it about a SECOND thing you love about your topic.
+
+Your page should now have:
+✓ h1 — main title
+✓ h2 — first fact or subtitle
+✓ h3 — small detail
+✓ h2 — second fact or subtitle
+
+Look at the preview. That is a REAL webpage structure!`,
+      bytePrompt: `Two h2 headings, one h1, one h3.
+That is exactly the structure of a real Wikipedia article.
+Read that again: you just built what Wikipedia uses.
+Go ahead. Add that second h2.`,
+      hint: `Add another h2 at the bottom of your body:
+<h3>Small detail</h3>
+<h2>Your second fact here</h2>
+It should end up BELOW your h3. Two h2s total on the page.`,
+      startingCode: `<html>
+  <head><title>My Page</title></head>
+  <body>
+    <h1>My Topic</h1>
+    <h2>First fact</h2>
+    <h3>Small detail</h3>
+    
+  </body>
+</html>`,
+      xp: 10,
+      validate: (doc) => doc.querySelectorAll('h2').length >= 2
+    },
+  ]
+}
+```
+
+---
+
+## PAGE SPECS — BUILD EACH PAGE EXACTLY AS DESCRIBED
+
+---
+
+### OnboardingPage.tsx — 4-SCREEN FLOW
+
+Route: /onboarding
+Navigates to: /map on completion
+
+This is the MOST IMPORTANT interaction. Personal relevance is locked in here.
+It takes 90 seconds. Do not rush it.
+
+```
+SCREEN 1 — BYTE WAVES (auto-advances after 3 seconds OR on click)
+─────────────────────────────────────────────────────────────────
+Background: brand purple (#5C3EBC)
+Layout: centered, vertically middle of screen
+
+Byte SVG: byte-cheer.svg
+  → Framer Motion: scale 0 → 1.1 → 1.0 on mount (0.6s total, spring)
+  → After scale-in: gentle up-down float loop (y: 0 → -8 → 0, infinite, 2s)
+
+Speech bubble (white card, rounded-2xl, shadow-lg):
+  → Appears 0.8s after Byte appears
+  → Framer Motion: opacity 0 → 1, y: 10 → 0 (0.4s ease-out)
+  → Text: "HEY! I am Byte — your robot coding buddy!"
+  → Text size: 24px, font-weight: 700, color: #111111
+  → Below text: smaller text 16px muted: "Tap anywhere to keep going"
+
+Click anywhere → advance to Screen 2
+
+
+SCREEN 2 — THE QUESTION (kid types their topic)
+─────────────────────────────────────────────────────────────────
+Background: #F8F7F4 (warm bg)
+Layout: centered card, max-width 560px
+
+Byte SVG: byte-idle.svg
+  → Small, top-left of card, 80x80px
+  → Gentle idle float animation
+
+Big prompt text (36px, bold, #111111, text-center):
+  "What is something you know A LOT about?"
+
+Sub-text (18px, muted, text-center, margin-bottom 32px):
+  "Your answer becomes the theme of your whole website."
+
+Example chips (scrollable row of rounded pills):
+  Each pill: bg-purpleL, text-purple, font-medium, text-sm, cursor-pointer
+  Pills: ["My dog 🐕", "Minecraft ⛏️", "My abuela 👵", "The Knicks 🏀",
+          "Taylor Swift 🎤", "Dinosaurs 🦕", "Anime 🎌", "Cooking 🍳",
+          "My neighborhood 🏙️", "Soccer ⚽"]
+  → Clicking a pill fills the text input below with that text
+
+Text input (full-width, border-2, border-purple on focus, rounded-xl, 20px, p-4):
+  placeholder: "Type anything — your topic is yours!"
+  → autofocus on mount
+  → maxLength: 40
+
+Button "Let's Go →" (full-width, bg-orange, text-white, rounded-xl, 18px bold):
+  → Disabled + opacity-50 while input is empty
+  → On click: save topicName to gameStore, advance to Screen 3
+
+
+SCREEN 3 — BYTE REACTS (reads the topic, goes wild)
+─────────────────────────────────────────────────────────────────
+Background: brand purple (#5C3EBC)
+
+Byte SVG: byte-cheer.svg
+  → Framer Motion: bounce animation
+    y: [0, -20, 0, -12, 0], transition: duration 0.8s on mount
+
+Speech bubble (white, large, centered, rounded-2xl, max-width 480px):
+  Line 1 (28px, bold): "OH WOW."
+  Line 2 (22px): "[topicName]?!"
+    → topicName pulled from gameStore, rendered in orange (#D4581A) and bold
+  Line 3 (22px): "I have been waiting for someone who knows about THAT."
+  Line 4 (22px): "Your website is going to be INCREDIBLE."
+
+  → Text appears word by word with a stagger (each word: opacity 0→1, 40ms apart)
+
+After text finishes appearing (≈2 seconds):
+  → Small button appears: "I know, right? →" (white, outlined, rounded-full)
+  → Or auto-advance after 3 more seconds
+
+
+SCREEN 4 — THE PROMISE (Byte makes a commitment)
+─────────────────────────────────────────────────────────────────
+Background: gradient, purple top to slightly lighter purple bottom
+
+Byte SVG: byte-idle.svg, centered, 120x120px
+  → Gentle float animation
+
+Speech bubble (white card):
+  "By the end of today, you will have a REAL webpage about"
+  "[topicName]" ← orange, bold
+  "that REAL people can see."
+  ""
+  "Let us go build it."
+
+Button "START LESSON 1" (large, bg-orange, text-white, rounded-2xl, 20px bold, px-12 py-4):
+  → Framer Motion: pulse animation (scale 1.0 → 1.04 → 1.0, loop, 2s)
+  → On click: navigate to /lesson/1
+
+Optional small field below button:
+  "Got a class code? (ask your teacher)"
+  → Text input, small, muted styling
+  → Saves to classroomCode in store if filled in
+```
+
+---
+
+### MapPage.tsx — SKILL TREE
+
+Route: /map
+Navigates to: /lesson/:id on node click
+
+```
+LAYOUT:
+─────────────────────────────────────────────────────────────────
+Header bar (sticky, bg-white, border-bottom, h-14):
+  Left: Code4Kidz logo (purple text, bold)
+  Center: Streak badge (fire emoji + number, visible even at 0)
+  Right: XP counter (lightning bolt emoji + number, orange)
+
+Main content: vertically scrollable, max-width 400px, centered
+
+Title (24px, bold, text-center, margin-top 32px):
+  "Your Learning Path"
+Sub (16px, muted, text-center, margin-bottom 40px):
+  "Complete lessons to unlock the next one"
+
+SKILL TREE NODES (10 total, vertical winding path):
+─────────────────────────────────────────────────────────────────
+Render as alternating left-center-right columns to create a winding feel.
+Connect adjacent nodes with a vertical line (2px, border-dashed when locked, border-solid green when completed).
+
+NODE STATES:
+
+1. COMPLETED (lesson ID in completedLessons array):
+   Circle: 72px diameter, bg-green, border-2 border-green
+   Icon: white checkmark (✓), 28px
+   Lesson number: below circle, 12px, muted
+   Lesson title: 14px, bold, text-center below number
+   On hover: scale 1.05 (Framer Motion, 0.2s)
+   On click: navigate to that lesson (can replay)
+
+2. CURRENT (currentLessonId === this lesson):
+   Circle: 72px diameter, bg-purple, border-2 border-purple
+   Icon: lesson emoji (👋 for lesson 1, 🔤 for lesson 2, etc), 28px
+   Lesson number below, lesson title below
+   Animation: Framer Motion pulse — scale 1.0 → 1.08 → 1.0, infinite, 2s
+   Outer ring: pulsing opacity 1 → 0.4 → 1 in purple, 2.4s
+   On click: navigate to /lesson/[id]
+
+3. LOCKED (not completed, not current):
+   Circle: 72px diameter, bg-border (#DEDCD7), border-2 border-border
+   Icon: padlock emoji 🔒, 24px, muted color
+   Lesson title: 14px, muted
+   No click interaction
+   Cursor: not-allowed
+
+BYTE appears at bottom of visible map:
+   byte-idle.svg, 80px, animated float
+   Speech bubble: "Ready to start Lesson [N]? Tap the glowing circle!"
+```
+
+---
+
+### LessonPage.tsx — THE 3-PANEL EDITOR
+
+Route: /lesson/:id
+This is the core product. Every pixel matters.
+
+```
+LAYOUT:
+─────────────────────────────────────────────────────────────────
+Full viewport height, no scroll on the outer container.
+Three columns, equal width (33.33% each).
+
+HEADER BAR (full-width, above the 3 columns, h-14, bg-white, border-bottom):
+  Left: Back arrow → /map (with confirm dialog if lesson in progress)
+  Center: "Lesson [N] — [title]" in 16px bold purple
+  Right: HeartBar + XPCounter side by side
+
+─────── COLUMN 1: LESSON PANEL ──────────────────────────────────
+Background: #EDE9FB (purpleL)
+Padding: 20px
+Overflow-y: auto
+
+TOP AREA — Byte:
+  byte-[mood].svg: 96px × 96px
+  Positioned top-left of the panel
+  Framer Motion AnimatePresence — crossfade between SVGs on mood change:
+    opacity: 0 → 1, duration: 0.3s
+
+  SPEECH BUBBLE (positioned right of Byte, top of panel):
+    White card, rounded-xl, p-4, shadow-sm, max-width 240px
+    Triangle pointer on left side pointing to Byte
+    Text: byteMessage from gameStore (16px, #111111)
+    Framer Motion: AnimatePresence — fade in/out on byteMessage change
+
+  STORY BUBBLE (special — only when byteStoryMoment triggers):
+    Background: #FAE8F3 (pinkL)
+    Border-left: 4px solid #8C2060 (pink)
+    Rounded-xl, p-4
+    Label top: "Byte's story" in 12px, bold, pink color
+    Text: byteStoryMoment content, 15px italic, dark
+    Dismiss button: "Got it" text-link, bottom-right, 13px, muted
+    Auto-dismiss: after 8 seconds
+    Framer Motion: slide-in from left (x: -20 → 0, opacity 0 → 1, 0.4s)
+
+MIDDLE AREA — Instruction:
+  Lesson number + step indicator (12px, bold, uppercase, letter-spaced, purple):
+    "LESSON [N]  ·  STEP [X] OF 5"
+    (warm-up shows "WARM-UP")
+
+  Instruction text (18px, #111111, line-height: 1.7):
+    Rendered from currentStep.instruction
+    Inline code snippets (<code> tags): monospace, bg-purpleP, px-1, rounded, text-purple
+
+  Science hook (below instruction, collapsible):
+    Header: "🔬 Science connection" in 13px bold teal
+    Body: 14px muted — only shown on first visit to each step
+    Tap to expand/collapse
+
+BOTTOM AREA — Controls:
+  HINT BUTTON:
+    Hidden until failCount >= 2
+    When revealed: Framer Motion slide-up (y: 20 → 0, 0.3s)
+    Style: bg-orangeL, border-orange, text-orange, rounded-xl, full-width
+    Icon: 💡 lightbulb
+    Label: "Show Byte's hint"
+    On click: expand hint text below the button, set hintsUsed = true
+    Hint text: 16px, italic, orange, line-height 1.6
+
+  STEP PROGRESS BAR:
+    5 dots in a row (or 6 including warm-up)
+    Completed step: filled purple circle 10px
+    Current step: filled orange circle 10px (pulse animation)
+    Upcoming step: outlined gray circle 10px
+    Spacing: gap-2
+
+─────── COLUMN 2: CODE EDITOR ───────────────────────────────────
+Background: #1A1A2E (dark, like a real IDE)
+Full height
+
+HEADER (bg-[#252540], h-10, flex items-center px-4):
+  Three colored dots (red, yellow, green — cosmetic only, 10px circles)
+  "index.html" in 13px muted monospace
+
+CODEMIRROR INSTANCE:
+  Language: HTML (@codemirror/lang-html)
+  Font: monospace (Fira Code or Courier New), 18px
+  Line height: 1.8
+  Theme: dark (custom — background #1A1A2E, text #D4D4D4)
+  Auto-close tags: YES
+  Line numbers: YES
+  Starting value: currentStep.startingCode
+
+  onChange (debounced 150ms):
+    → update code in gameStore
+    → trigger validate()
+
+VALIDATION FEEDBACK BAR (below editor, h-8):
+  IDLE state: nothing shown
+  FAIL state: red bar with "✗ Not quite — check the preview" in 13px
+  PASS state: green bar with "✓ Perfect!" — lasts 1.2s then advances
+
+─────── COLUMN 3: LIVE PREVIEW ──────────────────────────────────
+Background: white
+Full height
+
+HEADER (bg-bg, h-10, border-bottom, flex items-center px-4):
+  Three cosmetic dots (same as editor)
+  "Live Preview" in 13px muted
+
+IFRAME:
+  width: 100%, height: calc(100% - 40px)
+  border: none
+  sandbox: "allow-scripts"
+  srcDoc: built from current code value (see Preview component below)
+  Updates: debounced 150ms after code changes
+
+EMPTY STATE (when code is empty):
+  Centered in iframe area:
+  Byte idle SVG, 60px
+  Text: "Your page will appear here as you type" in 16px muted
+
+NOTE: Iframe NEVER shows a blank white screen.
+If the HTML is invalid, it shows whatever parsed correctly — partial is always better than blank.
+```
+
+---
+
+### Validator Logic — validator.ts
+
+```typescript
+// utils/validator.ts
+import type { LessonStep } from '../data/lessons/lesson-01'
+
+export type ValidationResult = 'pass' | 'fail' | 'error'
+
+export function validate(
+  iframeRef: React.RefObject<HTMLIFrameElement>,
+  step: LessonStep
+): ValidationResult {
+  try {
+    const doc = iframeRef.current?.contentDocument
+    if (!doc) return 'error'
+    if (step.type === 'warmup') return 'pass'  // warm-up always passes after 1 attempt
+    return step.validate(doc) ? 'pass' : 'fail'
+  } catch {
+    return 'fail'   // NEVER crash on bad kid code
+  }
+}
+```
+
+---
+
+### Validation Event Flow — Wire This Exactly
+
+```
+ON EVERY KEYSTROKE (debounced 150ms):
+  1. Update gameStore.code
+  2. Update iframe.srcDoc (the preview re-renders)
+  3. After 200ms (give iframe time to parse): run validate()
+
+  IF result === 'pass':
+    → Play correct-ping.mp3 (Howler, volume 0.6)
+    → Set editor validation bar to green "✓ Perfect!"
+    → Byte mood: 'cheer'
+    → Byte message: step-specific cheer line (see below)
+    → gainXP(failCount === 0 ? step.xp : Math.floor(step.xp / 2))
+    → recordMistake if failCount > 0
+    → setTimeout(advanceStep, 1200)   ← 1.2 second pause before next step
+    → If this was the last step (step-5): navigate to /review/[lessonId]
+
+  IF result === 'fail':
+    → NO immediate feedback (avoid rapid red flashing while kid is typing)
+    → Only show fail state if code has been unchanged for 2 seconds
+    → incrementFail()
+    → If failCount >= 2: reveal hint button (Framer Motion slide-up)
+    → If failCount >= 1: Byte mood → 'think', byteMessage → think line
+    → If hearts > 0 AND failCount is a multiple of 3: loseHeart()
+    → Play wrong-buzz.mp3 (Howler, volume 0.4) — only on heart loss, not every fail
+```
+
+---
+
+### Byte Mood → Message Mapping Per Step
+
+```
+When a new step loads:
+  → mood: 'idle'
+  → message: currentStep.bytePrompt
+
+When kid has been on a step for 15+ seconds without typing:
+  → mood: 'think'
+  → message: "Hmm... take your time. What does the instruction say to type?"
+
+When kid starts typing (any keystroke after idle):
+  → mood: 'idle'
+  → message: currentStep.bytePrompt
+
+When hint is revealed:
+  → mood: 'think'
+  → message: "Here is a clue. Read it carefully — then try again."
+
+When step PASSES:
+  Lesson 1, step by step:
+    step-1 pass: "YES! You wrote your first HTML tag! The internet starts with exactly that."
+    step-2 pass: "The head is in! Think of it as your page's brain — invisible but important."
+    step-3 pass: "Look at that browser tab — it has YOUR title! A real webpage does that."
+    step-4 pass: "You found my bug! See the difference? Closing tags ALWAYS have a slash."
+    step-5 pass: "YOUR WORDS ON THE INTERNET. How does that feel? Because you just did that."
+  
+  Lesson 2, step by step:
+    warmup pass: "Lesson 1 is locked in! Let us build on top of it."
+    step-1 pass: "That h1 is the boss of the page. Everything else is smaller."
+    step-2 pass: "See how h2 is smaller? The number goes up, the importance goes down."
+    step-3 pass: "Three levels of headings! You can see the hierarchy working in the preview."
+    step-4 pass: "Found it! That slash was the whole problem. Now you will never miss it again."
+    step-5 pass: "Two h2s! That is a real document structure. Wikipedia uses exactly this."
+
+When 0 hearts remaining:
+  → mood: 'sad'
+  → message: "Zero hearts. That is okay — it happens to every coder. Hearts refill tomorrow. Come back!"
+  → After 2 seconds: navigate to /map
+```
+
+---
+
+### ReviewPage.tsx — POST-LESSON MISTAKE REDO
+
+Route: /review/:lessonId
+Navigates to: /complete/:lessonId
+
+```
+LOGIC:
+  On mount:
+    const mistakes = gameStore.mistakeLog[lessonId] ?? []
+    Sort by failCount descending (worst mistakes first)
+    Cap at 3 mistakes maximum
+
+  If mistakes.length === 0:
+    → Skip review entirely
+    → Navigate directly to /complete/:lessonId
+
+LAYOUT:
+  Full screen, bg-purpleP (very light purple)
+
+  HEADER:
+    Title: "Quick — let us make those stick!" (28px, bold, purple)
+    Sub: "You got [N] steps wrong. Let us redo them now." (16px, muted)
+
+  BYTE (centered, large, 120px):
+    byte-think.svg initially
+    Switches to byte-cheer.svg on each step pass
+
+  SPEECH BUBBLE:
+    On load: "I put these two steps aside because you had a little trouble.
+    Let us do them again right now — no hearts at risk. Just learning."
+
+  REVIEW STEP (same 3-panel layout as LessonPage, BUT):
+    → NO hearts displayed
+    → Banner at top of lesson panel: "REVIEW — No hearts at risk" (bg-greenL, text-green)
+    → On pass: +5 XP (small review bonus), Byte: "There it is! NOW it is locked in."
+    → On fail: Byte: "Almost! One more try — you already know how to do this."
+    → Unlimited attempts in review. No heart loss. No time pressure.
+
+  PROGRESS: "Step [X] of [N]" shown below Byte
+  
+  When all review steps done:
+    Byte: "DONE! You went back and got them right. That is exactly what great developers do."
+    → 2 second celebration
+    → Navigate to /complete/:lessonId
+```
+
+---
+
+### CompletePage.tsx — CELEBRATION
+
+Route: /complete/:lessonId
+Navigates to: /map
+
+```
+ON MOUNT:
+  1. Fire canvas-confetti (duration: 3 seconds, particleCount: 120, spread: 80)
+  2. Play win-fanfare.mp3
+  3. gainXP(lesson.xpReward)  // +50 XP bonus
+  4. markLessonComplete(lessonId)
+  5. checkAndUpdateStreak()
+
+LAYOUT:
+  Full screen, bg-purple gradient (top to bottom: #5C3EBC → #7C5CBF)
+
+  BYTE (centered, 160px):
+    byte-cheer.svg
+    Framer Motion: bounce on mount (y: [0, -30, 0, -15, 0], 1s spring)
+    Continuous float after bounce
+
+  LESSON COMPLETE badge (white card, rounded-2xl, text-center, p-8):
+    Trophy emoji: 🏆, 48px
+    "LESSON [N] COMPLETE!" (32px, bold, purple)
+    
+    XP EARNED row:
+      Lightning emoji ⚡ + "[total XP gained this lesson] XP" in 24px orange bold
+      Framer Motion: counter animates from 0 to final value (duration 1.5s)
+
+    Byte's celebration quote (lesson.celebrationQuote):
+      18px, italic, muted, line-height 1.7
+      Framer Motion: fade in after 1s delay
+
+    If lesson was perfect (no hearts lost):
+      Gold star badge: ⭐ "PERFECT LESSON!" in gold, appears with scale pop animation
+
+  BACK TO MAP button (large, bg-white, text-purple, rounded-2xl, 18px bold):
+    Framer Motion: pulse (scale 1.0 → 1.04, loop, 2s) — draws eye after celebration
+    On click: navigate to /map
+    
+  SHARE button (outlined, smaller):
+    "Show someone what you built →"
+    → For MVP: copies the lesson completion message to clipboard
+    → Future: links to the shareable preview page
+```
+
+---
+
+### SOUND SETUP — sounds.ts
+
+```typescript
+// utils/sounds.ts
+import { Howl } from 'howler'
+
+export const sounds = {
+  correct: new Howl({
+    src: ['/assets/sounds/correct-ping.mp3'],
+    volume: 0.6,
+  }),
+  wrong: new Howl({
+    src: ['/assets/sounds/wrong-buzz.mp3'],
+    volume: 0.4,
+  }),
+  complete: new Howl({
+    src: ['/assets/sounds/win-fanfare.mp3'],
+    volume: 0.7,
+  }),
+  xpPop: new Howl({
+    src: ['/assets/sounds/xp-pop.mp3'],
+    volume: 0.5,
+  }),
+}
+
+// Sound files: use free CC0 sounds from freesound.org or pixabay
+// correct-ping: short ascending 2-note chime, under 0.5s
+// wrong-buzz: soft low buzz, under 0.4s
+// win-fanfare: upbeat 3-note fanfare, under 2.5s
+// xp-pop: small pop/blip, under 0.3s
+// ALL sounds are user-triggered ONLY — never autoplay
+```
+
+---
+
+### HeartBar.tsx — EXACT SPEC
+
+```
+3 heart icons in a row (use ❤️ emoji or SVG heart)
+- Full heart: red (#B33A1C), opacity 1
+- Empty heart: gray (#DEDCD7), opacity 0.5
+
+ON HEART LOSS:
+  Framer Motion on the losing heart:
+    x: [0, -6, 6, -4, 4, 0]  ← shake keyframes
+    duration: 0.5s
+  Color transition: red → gray (opacity change, 0.3s)
+  
+  Full HeartBar shakes briefly:
+    x: [0, -3, 3, -2, 2, 0], duration: 0.4s
+
+When hearts === 0:
+  All hearts gray
+  Small text below: "Hearts refill tomorrow" in 12px muted
+```
+
+---
+
+### XPCounter.tsx — XP POP ANIMATION
+
+```
+Display: ⚡ [xp] XP (inline, orange, bold, 16px in header)
+
+ON XP GAIN:
+  1. A "+[amount] XP" label appears above the counter
+     → Framer Motion: opacity 1 → 0, y: 0 → -30, duration 1.2s
+     → color: orange (#D4581A), font-weight: 700, font-size: 18px
+  2. The counter number rolls up to the new value
+     → Animated counter (each digit flips), duration 0.8s
+  3. Counter does a quick scale pulse: scale 1.0 → 1.2 → 1.0, 0.4s
+```
+
+---
+
+### Preview.tsx — THE CORE LOOP
+
+```typescript
+// components/Preview.tsx
+// This is the entire product in a single component.
+
+const SHELL = (code: string) => `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 1.25rem;
+        margin: 0;
+        color: #111111;
+        line-height: 1.6;
+      }
+      img { max-width: 100%; }
+      * { box-sizing: border-box; }
+    </style>
+  </head>
+  <body>${code}</body>
+</html>`
+
+// In the component:
+// - useDebounce(code, 150) before updating srcDoc
+// - Update srcDoc in a useEffect watching debouncedCode
+// - After srcDoc update + 200ms: run the validator
+// - sandbox="allow-scripts" — required for onclick handlers in Lesson 8
+// - Never set srcDoc to empty string — use the shell with empty body instead
+```
+
+---
+
+## BYTE SVG PLACEHOLDER (for dev, before real SVGs are delivered)
+
+Until Josh delivers the real Byte SVGs, use these colored placeholder divs:
+
+```typescript
+// Simple placeholder that shows mood via color
+const BytePlaceholder = ({ mood }: { mood: MascotMood }) => {
+  const colors = {
+    idle:  'bg-purple-200',
+    cheer: 'bg-green-200',
+    think: 'bg-orange-200',
+    sad:   'bg-red-200',
+    story: 'bg-pink-200',
+  }
+  const labels = {
+    idle:  '🤖',
+    cheer: '🎉',
+    think: '🤔',
+    sad:   '😔',
+    story: '💭',
+  }
+  return (
+    <div className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl ${colors[mood]}`}>
+      {labels[mood]}
+    </div>
+  )
+}
+```
+
+Replace with real SVG imports when Josh delivers:
+```
+import ByteIdle from '../assets/mascot/byte-idle.svg?react'
+import ByteCheer from '../assets/mascot/byte-cheer.svg?react'
+// etc.
+```
+
+---
+
+## ROUTING — App.tsx
+
+```typescript
+// App.tsx
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/"               element={<Navigate to="/onboarding" />} />
+        <Route path="/onboarding"     element={<OnboardingPage />} />
+        <Route path="/map"            element={<MapPage />} />
+        <Route path="/lesson/:id"     element={<LessonPage />} />
+        <Route path="/review/:id"     element={<ReviewPage />} />
+        <Route path="/complete/:id"   element={<CompletePage />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}
+```
+
+---
+
+## CRITICAL RULES — READ THESE BEFORE BUILDING
+
+1. THE EDITOR LOOP IS EVERYTHING.
+   CodeMirror → onChange → gameStore.updateCode → iframe.srcDoc update → validate().
+   Get this working on Day 1 before anything else. Nothing else matters until
+   a kid can type <h1>hello</h1> and see it appear in the preview.
+
+2. NEVER BLANK THE PREVIEW.
+   If the HTML is invalid, show whatever parsed. Partial > blank.
+   The visual cause-and-effect IS the learning. Do not break it.
+
+3. BYTE'S MESSAGES ARE NOT OPTIONAL.
+   Every step has exact bytePrompt copy. Use it verbatim.
+   Do not improvise Byte's dialogue. These words were written for a reason.
+
+4. DEBOUNCE IS 150ms, NOT MORE, NOT LESS.
+   Too fast = CPU thrash on old hardware.
+   Too slow = preview feels laggy and disconnected.
+
+5. HEART LOSS IS THROTTLED.
+   A kid can type wrong code for 30 seconds straight — they should not lose
+   3 hearts in 30 seconds. Hearts only decrease when the code has been
+   invalid and UNCHANGED for 3+ seconds. Not on every keystroke.
+
+6. WARM-UP STEPS NEVER LOSE HEARTS.
+   type === 'warmup' → loseHeart() is never called. Period.
+
+7. REVIEW STEPS NEVER LOSE HEARTS.
+   ReviewPage → loseHeart() is never called. Period.
+
+8. topicName IS INJECTED INTO BYTE'S MESSAGES.
+   Anywhere Byte says "your topic" in general — replace with the actual topicName.
+   Example: "Let us build your [topicName] page!" — pull from gameStore.
+
+9. FONTS ARE LARGE. ALWAYS.
+   Editor: 18px minimum. Instructions: 16px minimum.
+   These are non-negotiable for ages 7-10.
+
+10. ALL ANIMATIONS USE FRAMER MOTION.
+    No raw CSS animations except the idle breathing loop on Byte.
+    Framer Motion handles: page transitions, Byte mood swaps,
+    XP pops, heart loss shakes, speech bubble entrances.
+
+---
+
+## DEFINITION OF DONE
+
+The MVP is done when:
+
+✓ Kid opens /onboarding, enters a topic name, reaches /map
+✓ Kid clicks Lesson 1 node, sees all 3 panels
+✓ Kid types code in the editor, preview updates in real time
+✓ Each of the 5 steps in Lesson 1 validates correctly
+✓ Wrong answers consume a hint (after 2 fails) and optionally a heart
+✓ Byte switches moods correctly for each event
+✓ Lesson 1 completes → ReviewPage (if mistakes) → CompletePage with confetti
+✓ /map shows Lesson 1 as completed, Lesson 2 as current
+✓ Kid clicks Lesson 2, warm-up step appears first
+✓ All 5 Lesson 2 steps validate correctly
+✓ Lesson 2 completes → ReviewPage → CompletePage
+✓ XP persists across both lessons (localStorage via Zustand persist)
+✓ Streak increments if this is the kid's second day
+
+---
+
+## WHAT NOT TO BUILD YET
+
+❌ Classroom leaderboard (/classroom route) — Phase 2
+❌ AI hints via Claude API — Phase 2 (use static hints for now)
+❌ Share page / shareable URL — Phase 2
+❌ Spanish localization — Phase 3
+❌ Lessons 3-10 — build after lessons 1-2 are solid
+❌ Badge UI — stub the data, skip the modal for now
+❌ Push notifications — Phase 2
+❌ Mobile layout — desktop/laptop only for MVP
+
+---
+
+END OF SPEC
+
+This spec is complete. Every piece needed to build lessons 1 and 2 end-to-end is here.
+Start with gameStore.ts, then the lesson data files, then the editor/preview loop,
+then wire the pages in routing order.
+When in doubt: build the simplest thing that matches the spec.
+Do not add features. Do not improvise copy. Ship the spec.
