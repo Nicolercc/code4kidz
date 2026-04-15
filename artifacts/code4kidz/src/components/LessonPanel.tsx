@@ -62,7 +62,7 @@ export default function LessonPanel({
   }, [byteMessage]);
 
   return (
-    <div className="h-full flex flex-col p-8 overflow-y-auto">
+    <div className="h-full flex flex-col p-5 overflow-y-auto">
       <div className="flex-none mb-8">
         {!isWarmup && (
           <StepProgress currentStep={currentStepIndex} totalSteps={totalSteps} />
@@ -73,7 +73,7 @@ export default function LessonPanel({
         <div className="flex-none">
           <Byte
             mood={mascotMood}
-            size={96}
+            size={80}
             showSpeech={false}
             justPassed={justPassed}
             justFailed={justFailed}
@@ -86,7 +86,7 @@ export default function LessonPanel({
         </div>
 
         <div className="flex-1 min-w-0">
-          <ByteTypewriter text={byteMessage} mood={btMood} />
+          <ByteTypewriter text={byteMessage} mood={btMood} compact />
         </div>
       </div>
 

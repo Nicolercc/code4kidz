@@ -24,6 +24,8 @@ export interface ByteTypewriterProps {
   showTapHint?: boolean;
   /** After lesson-intro bar fills, pulse the hint more visibly. */
   pulseStrength?: 'normal' | 'strong';
+  /** Tighter typography for side panels (e.g. lesson) so content fits without scrolling. */
+  compact?: boolean;
 }
 
 export default function ByteTypewriter({
@@ -32,6 +34,7 @@ export default function ByteTypewriter({
   onContinue,
   showTapHint,
   pulseStrength = 'normal',
+  compact = false,
 }: ByteTypewriterProps) {
   const b = BUBBLE_STYLE[mood];
   const hintVisible = showTapHint ?? !!onContinue;
@@ -64,6 +67,11 @@ export default function ByteTypewriter({
 
   const interactive = !!onContinue;
 
+  const bubblePadding = compact ? '10px 14px' : '14px 16px';
+  const bubbleFontSize = compact ? 14 : 16;
+  const bubbleLineHeight = compact ? 1.5 : 1.6;
+  const paddingBottomDefault = compact ? 10 : 16;
+
   return (
     <div
       {...(interactive ? gate.containerProps : {})}
@@ -71,10 +79,10 @@ export default function ByteTypewriter({
         background: b.bg,
         borderLeft: `${b.borderW} solid ${b.borderColor}`,
         borderRadius: 12,
-        padding: '14px 16px',
-        paddingBottom: hintVisible && showIndicator ? 36 : 16,
-        fontSize: 16,
-        lineHeight: 1.6,
+        padding: bubblePadding,
+        paddingBottom: hintVisible && showIndicator ? 36 : paddingBottomDefault,
+        fontSize: bubbleFontSize,
+        lineHeight: bubbleLineHeight,
         color: b.text,
         fontWeight: 500,
         position: 'relative',

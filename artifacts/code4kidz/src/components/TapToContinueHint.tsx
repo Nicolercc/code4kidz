@@ -12,7 +12,9 @@ export default function TapToContinueHint({
 }) {
   if (!visible) return null;
 
-  const opacityRange = pulseStrength === 'strong' ? ([0.15, 1, 0.15] as const) : ([0.4, 1, 0.4] as const);
+  // Framer Motion keyframes expect a mutable array; `as const` makes this a readonly tuple.
+  const opacityRange: number[] =
+    pulseStrength === 'strong' ? [0.15, 1, 0.15] : [0.4, 1, 0.4];
 
   return (
     <motion.span
