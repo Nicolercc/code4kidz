@@ -12,7 +12,6 @@ import { lesson06 } from '../data/lessons/lesson-06';
 import { play } from '../utils/sounds';
 import Byte from '../components/Byte';
 import FlowBackButton from '../components/FlowBackButton';
-import XPCounter from '../components/XPCounter';
 import { speak, stopSpeaking } from '../utils/voice';
 
 const lessons = {
@@ -31,12 +30,12 @@ export default function CompletePage() {
   
   const { 
     topicName, 
+    xp,
     gainXP, 
     markLessonComplete, 
     checkAndUpdateStreak,
     heartsLostThisLesson,
     completedLessons,
-    streak,
     clearMistakeLog
   } = useGameStore();
 
@@ -48,61 +47,72 @@ export default function CompletePage() {
     return field.replace(/\{topic\}/g, topicName);
   };
 
-  const [milestone, setMilestone] = useState<null | 3 | 7 | 14 | 30>(null);
   useEffect(() => {
     speak(resolve(lesson.celebrationQuote));
     return () => stopSpeaking();
   }, [lesson.id]);
 
-  const milestoneConfig = useMemo(() => {
-    if (!milestone) return null;
-    if (milestone === 3) {
-      return { badge: '3‑Day Streak', tone: '#7A5C00', line: 'THREE DAYS. You are building a habit.', fires: 3 };
-    }
-    if (milestone === 7) {
-      return { badge: '7‑Day Streak', tone: '#D4AF37', line: 'SEVEN DAYS IN A ROW. You are on FIRE.', fires: 7 };
-    }
-    if (milestone === 14) {
-      return { badge: '14‑Day Streak', tone: '#5C3EBC', line: 'Two weeks. Every. Single. Day.', fires: 0 };
-    }
-    return { badge: '30‑Day Streak', tone: '#5C3EBC', line: 'THIRTY DAYS. Legendary.', fires: 0 };
-  }, [milestone]);
+  // Visible confetti bursts on mount (rendered above all content).
+  useEffect(() => {
+    confetti({
+      particleCount: 120,
+      spread: 70,
+      origin: { x: 0.5, y: 0.4 },
+      colors: ['#5C3EBC', '#D4581A', '#FFD700', '#ffffff', '#1A7A4E'],
+      zIndex: 9999,
+    });
+
+    const t2 = window.setTimeout(() => {
+      confetti({
+        particleCount: 80,
+        spread: 90,
+        angle: 60,
+        origin: { x: 0.1, y: 0.5 },
+        colors: ['#5C3EBC', '#D4581A', '#FFD700', '#ffffff'],
+        zIndex: 9999,
+      });
+    }, 1200);
+
+    const t3 = window.setTimeout(() => {
+      confetti({
+        particleCount: 80,
+        spread: 90,
+        angle: 120,
+        origin: { x: 0.9, y: 0.5 },
+        colors: ['#5C3EBC', '#D4581A', '#FFD700', '#ffffff'],
+        zIndex: 9999,
+      });
+    }, 2000);
+
+    const t4 = window.setTimeout(() => {
+      confetti({
+        particleCount: 150,
+        spread: 120,
+        origin: { x: 0.5, y: 0.3 },
+        colors: ['#FFD700', '#ffffff', '#5C3EBC'],
+        zIndex: 9999,
+        scalar: 1.2,
+      });
+    }, 3500);
+
+    return () => {
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+      window.clearTimeout(t4);
+    };
+  }, []);
 
   const didRunRef = useRef(false);
+  const startXPRef = useRef(xp);
+  const [displayXP, setDisplayXP] = useState(xp);
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'shared' | 'error'>( 'idle');
+  const statusTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (didRunRef.current) return;
     if (completedLessons.includes(lesson.id)) return;
     didRunRef.current = true;
 
-    const beforeStreak = streak;
-
-    // Confetti!
-    const duration = 3000;
-    const end = Date.now() + duration;
-
-    const frame = () => {
-      confetti({
-        particleCount: 5,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: ['#5C3EBC', '#D4581A', '#1A7A4E', '#7A5C00']
-      });
-      confetti({
-        particleCount: 5,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: ['#5C3EBC', '#D4581A', '#1A7A4E', '#7A5C00']
-      });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    };
-    
-    frame();
     play('complete');
     
     // Rewards
@@ -114,166 +124,262 @@ export default function CompletePage() {
     markLessonComplete(lesson.id);
     checkAndUpdateStreak();
     clearMistakeLog(lesson.id);
-
-    // Milestone overlay trigger based on the NEW streak value (after update)
-    // Wait a tick for store update.
-    setTimeout(() => {
-      const after = useGameStore.getState().streak;
-      const milestoneHit = (after === 3 || after === 7 || after === 14 || after === 30) && after > beforeStreak;
-      if (milestoneHit) setMilestone(after as 3 | 7 | 14 | 30);
-    }, 0);
   }, [lesson.id, completedLessons, gainXP, markLessonComplete, checkAndUpdateStreak, clearMistakeLog]);
 
   const isPerfect = heartsLostThisLesson === 0;
+  const celebrationQuote = resolve(lesson.celebrationQuote);
+
+  // XP count-up: animate displayXP from previous to current xp.
+  useEffect(() => {
+    const target = xp;
+    const start = displayXP;
+    if (target === start) return;
+
+    const duration = 1500;
+    const startTime = Date.now();
+    const interval = window.setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayXP(Math.round(start + (target - start) * eased));
+      if (progress >= 1) window.clearInterval(interval);
+    }, 16);
+
+    return () => window.clearInterval(interval);
+  }, [xp]);
+
+  // Capture "pre-complete" XP once on mount for correctness if we re-render.
+  useEffect(() => {
+    startXPRef.current = displayXP;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current !== null) window.clearTimeout(statusTimerRef.current);
+    };
+  }, []);
+
+  const shareLink = async () => {
+    const url = window.location.href;
+    const title = `Lesson ${lesson.lessonNumber} complete!`;
+    const text = `I just completed Lesson ${lesson.lessonNumber} on Code4Kidz!`;
+
+    // Prefer native share sheets when available (mobile/tablet).
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+        setShareStatus('shared');
+        if (statusTimerRef.current !== null) window.clearTimeout(statusTimerRef.current);
+        statusTimerRef.current = window.setTimeout(() => setShareStatus('idle'), 1400);
+        return;
+      } catch {
+        // If user cancels, fall through to clipboard (no toast spam).
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareStatus('copied');
+      if (statusTimerRef.current !== null) window.clearTimeout(statusTimerRef.current);
+      statusTimerRef.current = window.setTimeout(() => setShareStatus('idle'), 1400);
+    } catch {
+      setShareStatus('error');
+      if (statusTimerRef.current !== null) window.clearTimeout(statusTimerRef.current);
+      statusTimerRef.current = window.setTimeout(() => setShareStatus('idle'), 1800);
+    }
+  };
 
   return (
-    <div className="complete-bg-animated min-h-dvh w-full flex flex-col items-center justify-center p-6 overflow-hidden relative">
-      <FlowBackButton to="/map" label="← Map" replace />
-      <div className="absolute top-6 right-6">
-        <XPCounter />
+    <div className="complete-bg-animated min-h-dvh w-full relative flex flex-col items-center justify-center px-6 py-12 overflow-hidden">
+      {/* Top-left: Map */}
+      <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 30 }}>
+        <FlowBackButton to="/map" label="← Map" replace />
       </div>
 
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', bounce: 0.5 }}
-        className="bg-white rounded-3xl p-8 max-w-lg w-full text-center shadow-2xl relative"
-      >
-        <AnimatePresence>
-          {milestone && milestoneConfig && (
-            <motion.div
-              key={`milestone-${milestone}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: 24,
-                background: 'rgba(26, 26, 46, 0.92)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 24,
-                zIndex: 50,
-              }}
-              onClick={() => setMilestone(null)}
-            >
-              <motion.div
-                initial={{ scale: 0.92, y: 10 }}
-                animate={{ scale: 1, y: 0 }}
-                transition={{ type: 'spring', stiffness: 220, damping: 18 }}
-                style={{ width: '100%', maxWidth: 420, textAlign: 'center', color: 'white' }}
-              >
-                <div style={{ marginBottom: 10 }}>
-                  <Byte mood="cheer" size={110} showSpeech={false} justPassed />
-                </div>
-                <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 10 }}>
-                  {milestoneConfig.line}
-                </div>
-                {milestoneConfig.fires > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 12 }}>
-                    {Array.from({ length: milestoneConfig.fires }).map((_, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 8, scale: 0.6 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ delay: i * 0.12, type: 'spring', stiffness: 260, damping: 16 }}
-                        style={{ fontSize: 22 }}
-                      >
-                        🔥
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-                <div
-                  style={{
-                    display: 'inline-block',
-                    padding: '8px 14px',
-                    borderRadius: 999,
-                    background: 'rgba(255,255,255,0.08)',
-                    border: `2px solid ${milestoneConfig.tone}`,
-                    color: 'white',
-                    fontWeight: 900,
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                    fontSize: 12,
-                    marginBottom: 8,
-                  }}
-                >
-                  {milestoneConfig.badge}
-                </div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>
-                  Tap to continue
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {isPerfect && (
-          <motion.div 
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.5, type: 'spring' }}
-            className="absolute -top-6 -right-6 w-24 h-24 bg-brand-gold text-white rounded-full flex items-center justify-center shadow-xl border-4 border-white rotate-12"
-          >
-            <div className="text-center">
-              <div className="text-3xl">⭐</div>
-              <div className="text-[10px] font-black uppercase">Perfect</div>
-            </div>
-          </motion.div>
-        )}
-
+      {/* Top-right: PERFECT */}
+      {isPerfect && (
         <motion.div
-          className="w-32 h-32 mx-auto mb-6 flex items-center justify-center bg-brand-orangeL rounded-full"
-          initial={{ scale: 0, rotate: 0 }}
-          animate={{
-            scale: [0, 1.3, 1.0],
-            rotate: [0, -8, 8, -4, 4, 0],
-          }}
-          transition={{ type: 'spring', stiffness: 200, damping: 12 }}
+          style={{ position: 'fixed', top: 20, right: 20, zIndex: 100 }}
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.8 }}
         >
-          <motion.div
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <span className="text-6xl">🏆</span>
-          </motion.div>
-        </motion.div>
-
-        <h1 className="text-3xl font-black text-brand-purple uppercase mb-2">
-          LESSON {lesson.lessonNumber} COMPLETE!
-        </h1>
-        <h2 className="text-xl font-bold text-brand-dark mb-8">
-          {lesson.title}
-        </h2>
-
-        <div className="bg-brand-purpleL rounded-2xl p-6 mb-8 text-left relative">
-          <div className="absolute -top-6 left-6">
-            <Byte mood="celebrate" size={72} showSpeech onSpeechContinue={() => {}} />
+          <div style={{
+            background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+            borderRadius: '50%',
+            width: 80, height: 80,
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 30px rgba(255,215,0,0.6)',
+            border: '3px solid rgba(255,255,255,0.4)',
+          }}>
+            <span style={{ fontSize: 24 }}>⭐</span>
+            <span style={{ fontSize: 10, fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>
+              PERFECT
+            </span>
           </div>
-          <p className="text-brand-purple font-medium text-lg mt-4 leading-relaxed">
-            "{resolve(lesson.celebrationQuote)}"
-          </p>
-        </div>
+        </motion.div>
+      )}
 
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={() => navigate('/map')}
-            className="w-full py-4 bg-brand-purple text-white font-black text-xl rounded-2xl shadow-[0_6px_0_#3A2482] active:shadow-[0_0px_0_#3A2482] active:translate-y-[6px] transition-all"
-          >
-            CONTINUE
-          </button>
-          
-          <button
-            onClick={() => navigator.clipboard.writeText(`I just completed Lesson ${lesson.lessonNumber} on Code4Kidz! 🤖✨`)}
-            className="w-full py-4 bg-brand-bg text-brand-purple font-bold text-lg rounded-2xl hover:bg-brand-purpleP transition-colors"
-          >
-            Share Achievement
-          </button>
+      {/* Top-right: XP (below PERFECT) */}
+      <div style={{ position: 'absolute', top: 24, right: isPerfect ? 116 : 20, zIndex: 30 }}>
+        <div style={{
+          background: 'rgba(0,0,0,0.22)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.16)',
+          borderRadius: 999,
+          padding: '10px 14px',
+          color: 'white',
+          fontWeight: 900,
+          letterSpacing: '0.04em',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <span style={{ fontSize: 16 }}>⭐</span>
+          <span style={{ fontSize: 14 }}>{displayXP} XP</span>
         </div>
+      </div>
+
+      {/* Trophy */}
+      <motion.div
+        initial={{ scale: 0, rotate: 0 }}
+        animate={{ scale: [0, 1.3, 1.0], rotate: [0, -8, 8, -4, 4, 0] }}
+        transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.2 }}
+        style={{ marginBottom: 16, zIndex: 10 }}
+      >
+        <motion.div
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ fontSize: 80, lineHeight: 1 }}
+        >
+          🏆
+        </motion.div>
       </motion.div>
+
+      {/* Heading */}
+      <motion.h1
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        style={{
+          fontSize: 'clamp(28px, 6vw, 48px)',
+          fontWeight: 900,
+          color: 'white',
+          textAlign: 'center',
+          letterSpacing: '-0.01em',
+          marginBottom: 8,
+          textShadow: '0 2px 20px rgba(0,0,0,0.3)',
+          zIndex: 10,
+        }}
+      >
+        LESSON {lesson.lessonNumber} COMPLETE!
+      </motion.h1>
+
+      {/* Subtitle */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7 }}
+        style={{
+          fontSize: 18,
+          color: 'rgba(255,255,255,0.7)',
+          marginBottom: 40,
+          textAlign: 'center',
+          zIndex: 10,
+        }}
+      >
+        {lesson.title}
+      </motion.p>
+
+      {/* Byte + quote row (no bubble) */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9 }}
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 16,
+          maxWidth: 560,
+          width: '100%',
+          marginBottom: 40,
+          background: 'rgba(255,255,255,0.1)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: 20,
+          padding: '20px 24px',
+          border: '1px solid rgba(255,255,255,0.2)',
+          zIndex: 10,
+        }}
+      >
+        <Byte mood="cheer" size={80} justPassed showSpeech={false} />
+        <p style={{
+          color: 'white',
+          fontSize: 16,
+          lineHeight: 1.65,
+          fontStyle: 'italic',
+          margin: 0,
+          paddingTop: 8,
+        }}>
+          {celebrationQuote}
+        </p>
+      </motion.div>
+
+      {/* Continue */}
+      <motion.button
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.1 }}
+        onClick={() => navigate('/map')}
+        style={{
+          background: 'linear-gradient(135deg, #D4581A, #f07030)',
+          color: 'white',
+          fontSize: 20,
+          fontWeight: 900,
+          padding: '18px 64px',
+          borderRadius: 16,
+          border: 'none',
+          cursor: 'pointer',
+          boxShadow: '0 8px 32px rgba(212,88,26,0.5)',
+          letterSpacing: '0.02em',
+          marginBottom: 20,
+          zIndex: 10,
+        }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <motion.span
+          style={{ display: 'inline-block' }}
+          animate={{ scale: [1, 1.04, 1] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          CONTINUE →
+        </motion.span>
+      </motion.button>
+
+      {/* Share link */}
+      <button
+        onClick={() => { void shareLink(); }}
+        style={{
+          background: 'none',
+          border: 'none',
+          color: shareStatus === 'error' ? 'rgba(255,220,220,0.95)' : (shareStatus !== 'idle' ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.55)'),
+          fontSize: 14,
+          cursor: 'pointer',
+          textDecoration: 'underline',
+          zIndex: 10,
+          fontWeight: 700,
+        }}
+        aria-live="polite"
+      >
+        {shareStatus === 'shared'
+          ? 'Shared!'
+          : shareStatus === 'copied'
+            ? 'Link copied!'
+            : shareStatus === 'error'
+              ? 'Could not copy — try again'
+              : 'Share achievement'}
+      </button>
     </div>
   );
 }

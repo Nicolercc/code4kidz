@@ -3,7 +3,7 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EditorView } from '@codemirror/view';
 import { useGameStore } from '../store/gameStore';
-import { lesson01 } from '../data/lessons/lesson-01';
+import { lesson01, type LessonStep } from '../data/lessons/lesson-01';
 import { lesson02 } from '../data/lessons/lesson-02';
 import { lesson03 } from '../data/lessons/lesson-03';
 import { lesson04 } from '../data/lessons/lesson-04';
@@ -83,6 +83,10 @@ export default function LessonPage() {
   } = useGameStore();
 
   const [validationState, setValidationState] = useState<'idle' | 'pass' | 'fail'>('idle');
+  const validationStateRef = useRef(validationState);
+  useEffect(() => {
+    validationStateRef.current = validationState;
+  }, [validationState]);
   const [justPassed, setJustPassed]   = useState(false);
   const [justFailed, setJustFailed]   = useState(false);
   const [isTyping,   setIsTyping]     = useState(false);
@@ -108,10 +112,12 @@ export default function LessonPage() {
   const messageTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stuckTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stepLoadingRef = useRef(false);
   const lastCodeRef    = useRef(code);
   const hasTypedRef    = useRef(false);
   /** True after this step has validated as pass; blocks stale debounced validation runs. */
   const passRecordedRef = useRef(false);
+  const stepRef = useRef<LessonStep | null>(null);
 
   if (!lesson || !topicName) return <Navigate to="/map" replace />;
 
@@ -125,6 +131,7 @@ export default function LessonPage() {
   useEffect(() => {
     resetToStep(0);
     updateCode('');
+    lastCodeRef.current = '';
     hasTypedRef.current = false;
     setSplashDone(false);
     setSplashBarComplete(false);
@@ -161,11 +168,18 @@ export default function LessonPage() {
   const safeStepIndex = currentStepIndex < lesson.steps.length ? currentStepIndex : 0;
   const step = lesson.steps[safeStepIndex];
 
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+
   // Determine if we're on the Lesson 1 auto-advance warmup
   const isLesson1Warmup = step?.type === 'warmup' && step?.xp === 0;
 
   // Initialize step
   useEffect(() => {
+    stepLoadingRef.current = true;
+    window.setTimeout(() => { stepLoadingRef.current = false }, 200);
+
     // Cancel any pending message timers from the previous step.
     if (handoffTimerRef.current) clearTimeout(handoffTimerRef.current);
     if (promptTimerRef.current) clearTimeout(promptTimerRef.current);
@@ -177,7 +191,10 @@ export default function LessonPage() {
 
     if (step) {
       passRecordedRef.current = false;
-      updateCode(resolve(step.startingCode));
+      passAdvanceTimerRef.current = null;
+      const initialCode = resolve(step.startingCode);
+      lastCodeRef.current = initialCode;
+      updateCode(initialCode);
       setValidationState('idle');
       setIsTyping(false);
       setIsStuck(false);
@@ -308,11 +325,13 @@ export default function LessonPage() {
     }, STUCK_THRESHOLD_MS);
 
     validationTimerRef.current = setTimeout(() => {
-      if (!iframeRef.current || !step) return;
+      if (validationStateRef.current === 'pass') return;
+      if (!stepRef.current) return;
+      if (!iframeRef.current) return;
       if (passRecordedRef.current) return;
 
+      const result = validate(iframeRef, stepRef.current, lastCodeRef.current);
       const codeSnapshot = lastCodeRef.current;
-      const result = validate(iframeRef, step, codeSnapshot);
 
       if (result === 'pass') {
         passRecordedRef.current = true;
@@ -381,13 +400,14 @@ export default function LessonPage() {
 
         // Auto-advance after celebration (no tap gates in the editor flow).
         passAdvanceTimerRef.current = setTimeout(() => {
+          passAdvanceTimerRef.current = null;
           advanceStep();
         }, 1500);
       } else {
         // Code is wrong — but don't show a fail message until they've been idle longer.
         messageTimerRef.current = setTimeout(() => {
           if (lastCodeRef.current !== codeSnapshot) return;
-          if (step.type === 'warmup') return;
+          if (stepRef.current?.type === 'warmup') return;
 
           setValidationState('fail');
           setPreviewBorder('pulse-fail');
@@ -616,7 +636,8 @@ export default function LessonPage() {
           {/* Validation Bar */}
           <div className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-300 ${
             validationState === 'pass' ? 'translate-y-0 bg-brand-green text-white' :
-            validationState === 'fail' ? 'translate-y-0 bg-brand-red text-white' :
+            validationState === 'fail' && step?.type !== 'warmup'
+              ? 'translate-y-0 bg-brand-red text-white' :
             'translate-y-full bg-transparent'
           }`}>
             <div className="font-bold text-lg flex items-center gap-2">

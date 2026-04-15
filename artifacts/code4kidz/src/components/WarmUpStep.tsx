@@ -80,9 +80,10 @@ export default function WarmUpStep({ bytePrompt, instruction, onComplete, lesson
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-md border border-brand-border text-sm font-semibold text-brand-text leading-snug"
+          className="bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-md border border-brand-border"
         >
-          <ByteTypewriter text={bytePrompt} mood="idle" onContinue={() => {}} />
+          {/* Warm-up Byte bubble is informational only (no tap gate). */}
+          <ByteTypewriter text={bytePrompt} mood="idle" showTapHint={false} />
         </motion.div>
       </div>
 

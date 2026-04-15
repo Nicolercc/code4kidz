@@ -9,8 +9,8 @@ export function validate(
   rawCode?: string
 ): ValidationResult {
   try {
-    // Lesson 1 warmup (xp=0) always passes
-    if (step.type === 'warmup' && step.xp === 0) return 'pass'
+    // Warm-up steps are not gated here — WarmUpStep / splash controls flow.
+    if (step.type === 'warmup') return 'pass'
 
     // Get the iframe's window so CSS validators can call getComputedStyle
     const iframeWin = iframeRef.current?.contentWindow ?? undefined

@@ -150,7 +150,7 @@ const EYE_SCALE: Record<ByteState, { left: number; right: number }> = {
   think:     { left: 0.35, right: 1    },
   cheer:     { left: 0.45, right: 0.45 },
   sad:       { left: 0.55, right: 0.55 },
-  celebrate: { left: 0.2,  right: 0.2  },
+  celebrate: { left: 0.45, right: 0.45 },
 };
 
 // ─── Per-state continuous float loop ─────────────────────────────────────────
@@ -770,6 +770,13 @@ const Byte = memo(function Byte({
                 {/* Socket shadow (depth) */}
                 <ellipse cx="63" cy="71" rx="12" ry="9" fill="#2d6e30" opacity={0.85}/>
                 <circle cx="63" cy="71" r="10" fill="white"/>
+                {/* Eyelid shadow for cheer/celebrate (darker than face for readable expression) */}
+                <motion.ellipse
+                  cx="63" cy="66" rx="11" ry="6"
+                  fill="#3a8040"
+                  animate={{ opacity: isCheer ? 0.55 : 0 }}
+                  transition={{ duration: 0.2 }}
+                />
                 <circle cx={65 + pupilOff.x} cy={72 + pupilOff.y} r="5" fill="#1A1A2E"/>
                 <circle cx={67 + pupilOff.x * 0.6} cy={69 + pupilOff.y * 0.6} r="3" fill="white" opacity={0.95}/>
                 </motion.g>
@@ -783,10 +790,17 @@ const Byte = memo(function Byte({
               >
                 <motion.g animate={glanceControls}>
                 {/* Socket shadow (depth) */}
-                <ellipse cx="117" cy="71" rx="12" ry="9" fill="#2d6e30" opacity={0.85}/>
-                <circle cx="117" cy="71" r="10" fill="white"/>
-                <circle cx={119 + pupilOff.x} cy={72 + pupilOff.y} r="5" fill="#1A1A2E"/>
-                <circle cx={121 + pupilOff.x * 0.6} cy={69 + pupilOff.y * 0.6} r="3" fill="white" opacity={0.95}/>
+                <ellipse cx="117" cy="68" rx="12" ry="9" fill="#2d6e30" opacity={0.85}/>
+                <circle cx="117" cy="68" r="10" fill="white"/>
+                {/* Eyelid shadow for cheer/celebrate (darker than face for readable expression) */}
+                <motion.ellipse
+                  cx="117" cy="63" rx="11" ry="6"
+                  fill="#3a8040"
+                  animate={{ opacity: isCheer ? 0.55 : 0 }}
+                  transition={{ duration: 0.2 }}
+                />
+                <circle cx={119 + pupilOff.x} cy={69 + pupilOff.y} r="5" fill="#1A1A2E"/>
+                <circle cx={121 + pupilOff.x * 0.6} cy={66 + pupilOff.y * 0.6} r="3" fill="white" opacity={0.95}/>
                 </motion.g>
               </motion.g>
 

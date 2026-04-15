@@ -173,11 +173,20 @@ function AnimatedHeroBg() {
   );
 }
 
-function FloatingBadge({ children, className }: { children: React.ReactNode; className: string }) {
+function FloatingBadge({
+  children,
+  className,
+  animateY = [0, -8, 0],
+}: {
+  children: React.ReactNode;
+  className: string;
+  /** Vertical motion keyframes (relative to anchor). Smaller drift when anchored at feet. */
+  animateY?: [number, number, number];
+}) {
   return (
     <motion.div
       className={`absolute px-3 py-1.5 rounded-full text-sm font-bold shadow-lg font-poppins ${className}`}
-      animate={{ y: [0, -8, 0] }}
+      animate={{ y: animateY }}
       transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
     >
       {children}
@@ -344,11 +353,14 @@ export default function LandingPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ type: 'spring', stiffness: 80, damping: 14, delay: 0.4 }}
           >
-            {/* Floating XP / hearts badges */}
-            <FloatingBadge className="bg-kidz-yellow text-yellow-900 -top-2 -right-2 z-20">
+            {/* Floating XP / hearts badges — XP sits low (feet area) so it never covers the speech bubble */}
+            <FloatingBadge
+              className="bg-kidz-yellow text-yellow-900 bottom-4 right-4 z-10"
+              animateY={[0, -10, 0]}
+            >
               +100 XP! 🌟
             </FloatingBadge>
-            <FloatingBadge className="bg-kidz-pink text-white bottom-12 -left-8 z-20">
+            <FloatingBadge className="bg-kidz-pink text-white bottom-12 -left-8 z-10">
               ❤️ ×5
             </FloatingBadge>
 
@@ -364,7 +376,7 @@ export default function LandingPage() {
               animate={{ y: [0, -18, 0] }}
               transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <Byte mood="idle" size={280} showSpeech onSpeechContinue={() => {}} />
+              <Byte mood="idle" size={280} showSpeech />
             </motion.div>
           </motion.div>
 
