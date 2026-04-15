@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
-import Byte from '../components/Byte';
+import ByteTypewriter from '../components/ByteTypewriter';
 import XPCounter from '../components/XPCounter';
 import StreakBadge from '../components/StreakBadge';
 import { speak, stopSpeaking } from '../utils/voice';
@@ -40,6 +40,7 @@ export default function MapPage() {
   const { topicName, completedLessons, xp, streak, playedDates } = useGameStore();
   const [hoveredLocked, setHoveredLocked] = useState<number | null>(null);
   const [tappedLocked, setTappedLocked] = useState<number | null>(null);
+  const [showByteBubble, setShowByteBubble] = useState(true);
   const currentRef = useRef<HTMLDivElement | null>(null);
 
   if (!topicName) return <Navigate to="/onboarding" replace />;
@@ -311,6 +312,11 @@ export default function MapPage() {
     return () => stopSpeaking();
   }, [contextMessage]);
 
+  useEffect(() => {
+    const t = window.setTimeout(() => setShowByteBubble(false), 6000);
+    return () => window.clearTimeout(t);
+  }, []);
+
   return (
     <div
       className="min-h-dvh flex flex-col items-center relative overflow-hidden"
@@ -318,7 +324,11 @@ export default function MapPage() {
     >
       <CSSStarField />
 
-      <div className="relative z-1 flex w-full min-h-dvh flex-col items-center">
+      <div
+        className="relative z-1 flex w-full min-h-dvh flex-col items-center"
+        onClick={() => setShowByteBubble(false)}
+        role="presentation"
+      >
       {/* Orbs (kept extremely subtle; must never obscure labels) */}
       <div
         className="absolute pointer-events-none rounded-full"
@@ -644,15 +654,17 @@ export default function MapPage() {
         </p>
       </main>
 
-      {/* ── Footer Byte ── */}
-      <div className="fixed bottom-5 left-4 z-20 pointer-events-auto">
-        <motion.div
-          animate={{ y: [0, -5, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <Byte mood="idle" size={72} showSpeech speechText={contextMessage} onSpeechContinue={() => {}} />
-        </motion.div>
-      </div>
+      {/* ── Footer: ambient Byte message (no tap gate; map interaction dismisses) ── */}
+      {showByteBubble && (
+        <div className="fixed bottom-5 left-4 z-20 max-w-[min(100vw-2rem,320px)] pointer-events-none">
+          <motion.div
+            animate={{ y: [0, -5, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <ByteTypewriter text={contextMessage} mood="idle" showTapHint={false} />
+          </motion.div>
+        </div>
+      )}
       </div>
     </div>
   );
