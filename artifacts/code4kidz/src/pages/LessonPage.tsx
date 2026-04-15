@@ -110,6 +110,8 @@ export default function LessonPage() {
   const stuckTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCodeRef    = useRef(code);
   const hasTypedRef    = useRef(false);
+  /** True after this step has validated as pass; blocks stale debounced validation runs. */
+  const passRecordedRef = useRef(false);
 
   if (!lesson || !topicName) return <Navigate to="/map" replace />;
 
@@ -174,6 +176,7 @@ export default function LessonPage() {
     }
 
     if (step) {
+      passRecordedRef.current = false;
       updateCode(resolve(step.startingCode));
       setValidationState('idle');
       setIsTyping(false);
@@ -277,8 +280,6 @@ export default function LessonPage() {
   }, [previewBorder]);
 
   const handleCodeChange = (newCode: string) => {
-    // If we've already passed and we're waiting to auto-advance, don't let extra typing
-    // cancel the advance timer (otherwise the kid can get stuck on a "passed" step).
     if (passAdvanceTimerRef.current) return;
     updateCode(newCode);
     lastCodeRef.current = newCode;
@@ -308,10 +309,13 @@ export default function LessonPage() {
 
     validationTimerRef.current = setTimeout(() => {
       if (!iframeRef.current || !step) return;
+      if (passRecordedRef.current) return;
 
-      const result = validate(iframeRef, step, newCode);
+      const codeSnapshot = lastCodeRef.current;
+      const result = validate(iframeRef, step, codeSnapshot);
 
       if (result === 'pass') {
+        passRecordedRef.current = true;
         setValidationState('pass');
         // Beat 1: sound FIRST (instant)
         play('correct');
@@ -382,7 +386,7 @@ export default function LessonPage() {
       } else {
         // Code is wrong — but don't show a fail message until they've been idle longer.
         messageTimerRef.current = setTimeout(() => {
-          if (lastCodeRef.current !== newCode) return;
+          if (lastCodeRef.current !== codeSnapshot) return;
           if (step.type === 'warmup') return;
 
           setValidationState('fail');
