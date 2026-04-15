@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 
 const SHELL = (code: string) => {
   const trimmed = code.trim();
-  const lower = trimmed.toLowerCase();
 
   // If the kid writes structural HTML (<html>...), do NOT wrap it inside our <body>.
   // Wrapping would produce <body><html>...</html></body> which is malformed.
-  const isStructuralHtml = lower.includes('<html');
+  // Match a real opening <html> tag (with optional attributes), not unrelated "html" substrings.
+  const isStructuralHtml = /<html[\s>]/i.test(trimmed);
 
   const styleTag = `<style>
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 1.5rem 1.75rem; margin: 0; color: #111111; line-height: 1.7; background: #FAFAF8; min-height: 100vh; }
@@ -21,6 +21,7 @@ const SHELL = (code: string) => {
     </style>`;
 
   if (isStructuralHtml) {
+    const lower = trimmed.toLowerCase();
     if (lower.includes('</head>')) {
       return '<!DOCTYPE html>' + trimmed.replace(/<\/head>/i, styleTag + '</head>');
     }
