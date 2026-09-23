@@ -1,7 +1,7 @@
 # Code4Kidz remediation: before and after
 
 Evidence for every claim below is in this folder or in the commit named next to it. The "before" is the app as
-prototyped (commit `395ae36`); the "after" is branch `chore/strip-scaffold` at `69c9148`.
+prototyped (commit `395ae36`); the "after" is the tip of branch `chore/strip-scaffold`.
 
 ## Accessibility: automated (axe-core 4.13, WCAG 2.1 A/AA + best practice)
 
