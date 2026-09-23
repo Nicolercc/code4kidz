@@ -1,0 +1,18 @@
+- banner:
+  - button "Exit"
+  - button "Turn sound effects on"
+  - text: 3 of 3 hearts left 0 XP
+- 'main "Lesson 1: Say Hello to the Web! — Step 1 of 5"':
+  - 'heading "Lesson 1: Say Hello to the Web! — Step 1 of 5" [level=1]'
+  - status: This one tag — html — is the very first thing on EVERY website. YouTube starts with it. Roblox starts with it. Now your Space page does too.
+  - region "Instructions":
+    - text: Step 1 of 5 Byte's Story This one tag — html — is the very first thing on EVERY website. YouTube starts with it. Roblox starts with it. Now your Space page does too.
+    - paragraph: YOUR MISSION
+    - text: "Every webpage on the internet starts with a container. Type this exactly: <html></html> This tells the browser: \"A webpage lives here.\" When you type it correctly, you will move to the next step!"
+    - button "Need a hint?"
+  - region "Code editor":
+    - button "Check my code"
+    - textbox "Your code"
+  - region "Live preview":
+    - text: "Browser tab: Untitled page"
+    - iframe

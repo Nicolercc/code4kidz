@@ -1,0 +1,18 @@
+- region "Lesson 1 Say Hello to the Web!":
+  - button "Go back to previous screen": ← Back
+  - heading "Lesson 1 Say Hello to the Web!" [level=1]
+  - text: Hey! I am Byte — your robot coding buddy! Today you are going to build your FIRST ever webpage — about Space! Every website on the internet starts the same way yours will. Let us start RIGHT NOW.
+  - button "Continue"
+- banner:
+  - button "Exit"
+  - button "Turn sound effects on"
+  - text: 3 of 3 hearts left 0 XP
+- 'main "Lesson 1: Say Hello to the Web! — Intro"':
+  - 'heading "Lesson 1: Say Hello to the Web! — Intro" [level=1]'
+  - status: This is your first time here — we jump straight in. Today we build a Space page together. Ready? Let us go.
+  - region "Instructions"
+  - region "Code editor":
+    - textbox "Your code"
+  - region "Live preview":
+    - text: "Browser tab: Untitled page"
+    - iframe
