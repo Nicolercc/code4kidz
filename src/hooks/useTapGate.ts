@@ -1,84 +1,50 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { KeyboardEvent, MouseEvent } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import type { MouseEvent } from 'react';
 
 export interface UseTapGateResult {
-  /** Text is always shown in full immediately — always true when active. */
-  isReady: boolean;
-  /** True 1.5s after mount or after resetKey changes (when active). */
-  indicatorVisible: boolean;
-  /** For screen readers when the tap hint becomes available. */
-  announce: string;
-  /** Spread onto the tappable container (bubble, card, or full-screen region). */
-  containerProps: {
-    role: 'button';
-    tabIndex: 0;
-    'aria-label': string;
+  /**
+   * Spread onto the tappable area so a tap anywhere continues. It is not a
+   * control itself (no role, label or tab stop), so its text stays readable.
+   */
+  regionProps: { onClick: (e: MouseEvent) => void };
+  /** Spread onto the real <ContinueButton>: the keyboard and screen reader path. */
+  buttonProps: {
     onClick: (e: MouseEvent) => void;
-    onKeyDown: (e: KeyboardEvent) => void;
+    ref: (el: HTMLButtonElement | null) => void;
   };
 }
 
 /**
- * Tap / click / Space / Enter to call onAdvance.
- * No network; works with keyboard and touch.
- * @param active When false, indicator and timers are cleared (e.g. bubble hidden).
+ * "Tap to continue" for screens that pause on a message.
+ *
+ * This used to give the whole area role="button" plus an aria-label, which
+ * replaced the message with "Press space or tap to continue" for screen reader
+ * users. Now the area only handles pointer taps and a real button carries the
+ * keyboard / assistive-tech path. The button takes focus when the gate opens,
+ * so Enter continues straight away.
  */
-export function useTapGate(
-  onAdvance: () => void,
-  resetKey?: string | number,
-  active = true
-): UseTapGateResult {
-  const [indicatorVisible, setIndicatorVisible] = useState(false);
-  const [announce, setAnnounce] = useState('');
+export function useTapGate(onAdvance: () => void, active = true): UseTapGateResult {
   const onAdvanceRef = useRef(onAdvance);
-  onAdvanceRef.current = onAdvance;
-
   useEffect(() => {
-    if (!active) {
-      setIndicatorVisible(false);
-      setAnnounce('');
-      return;
-    }
-    setIndicatorVisible(false);
-    setAnnounce('');
-    const t = window.setTimeout(() => {
-      setIndicatorVisible(true);
-      setAnnounce('Press space to continue');
-    }, 1500);
-    return () => window.clearTimeout(t);
-  }, [active, resetKey]);
+    onAdvanceRef.current = onAdvance;
+  });
 
-  const advance = useCallback((e?: MouseEvent) => {
-    e?.stopPropagation();
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (active) buttonRef.current?.focus();
+  }, [active]);
+
+  const advance = useCallback((e: MouseEvent) => {
+    e.stopPropagation();
     onAdvanceRef.current();
   }, []);
 
-  const onKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        e.stopPropagation();
-        onAdvanceRef.current();
-      }
-    },
-    []
-  );
-
-  const containerProps = useMemo(
-    () => ({
-      role: 'button' as const,
-      tabIndex: 0 as const,
-      'aria-label': 'Press space or tap to continue',
-      onClick: advance,
-      onKeyDown,
-    }),
-    [advance, onKeyDown]
-  );
+  const setButton = useCallback((el: HTMLButtonElement | null) => {
+    buttonRef.current = el;
+  }, []);
 
   return {
-    isReady: active,
-    indicatorVisible,
-    announce,
-    containerProps,
+    regionProps: { onClick: advance },
+    buttonProps: { onClick: advance, ref: setButton },
   };
 }

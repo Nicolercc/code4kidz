@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useRef, useState, memo } from "react";
+import { useEffect, useRef, useState, memo } from "react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import type { MascotMood } from "../store/gameStore";
-import TapToContinueHint from "./TapToContinueHint";
-import { useTapGate } from "../hooks/useTapGate";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type ByteState = "idle" | "story" | "think" | "cheer" | "sad" | "celebrate";
@@ -13,10 +11,7 @@ interface ByteProps {
   showSpeech?: boolean;
   /** Optional override for the speech bubble text (Map / special moments). */
   speechText?: string;
-  /** Required when showSpeech is true: tap dismisses the bubble and runs this. */
-  onSpeechContinue?: () => void;
   className?: string;
-  onStateEnd?: () => void;
   justPassed?: boolean;
   justFailed?: boolean;
   isTyping?: boolean;
@@ -269,9 +264,7 @@ const Byte = memo(function Byte({
   size = 120,
   showSpeech = false,
   speechText,
-  onSpeechContinue,
   className = "",
-  onStateEnd,
   justPassed = false,
   justFailed = false,
   justAdvanced = false,
@@ -514,6 +507,9 @@ const Byte = memo(function Byte({
 
   // ── Random idle glances ──
   useEffect(() => {
+    // Recentre the eyes here, not in cleanup: cleanup also runs on unmount,
+    // when the controls no longer have a mounted element to set.
+    glanceControls.set({ x: 0, y: 0 });
     if (state !== "idle") return;
     let canceled = false;
     let timer: number | undefined;
@@ -547,7 +543,6 @@ const Byte = memo(function Byte({
       canceled = true;
       if (timer) window.clearTimeout(timer);
       glanceControls.stop();
-      glanceControls.set({ x: 0, y: 0 });
     };
   }, [state, glanceControls]);
 
@@ -565,19 +560,6 @@ const Byte = memo(function Byte({
   };
   const bc = bubbleColour(state);
 
-  const speechAdvance = useCallback(() => {
-    if (!onSpeechContinue) return;
-    setShowBubble(false);
-    onSpeechContinue();
-    if (state === "sad" && onStateEnd) setTimeout(onStateEnd, 400);
-  }, [onSpeechContinue, state, onStateEnd]);
-
-  const speechGate = useTapGate(
-    speechAdvance,
-    speech,
-    !!(showSpeech && showBubble && onSpeechContinue)
-  );
-
   return (
     <div
       ref={containerRef}
@@ -589,6 +571,7 @@ const Byte = memo(function Byte({
         {showLightbulb && (
           <motion.div
             key="lightbulb"
+            aria-hidden="true"
             style={{
               position: "absolute", top: -6, left: "50%", transform: "translateX(-50%)",
               fontSize: size * 0.22, pointerEvents: "none", zIndex: 25, userSelect: "none",
@@ -608,7 +591,6 @@ const Byte = memo(function Byte({
         {showSpeech && showBubble && (
           <motion.div
             key={speech}
-            {...(onSpeechContinue ? speechGate.containerProps : {})}
             aria-live="polite"
             aria-atomic="true"
             initial={{ opacity: 0, y: 8, scale: 0.90 }}
@@ -624,7 +606,7 @@ const Byte = memo(function Byte({
               background: bc.bg,
               border: `2px solid ${bc.border}`,
               borderRadius: 14,
-              padding: onSpeechContinue && speechGate.indicatorVisible ? "8px 14px 28px 14px" : "8px 14px",
+              padding: "8px 14px",
               fontSize: 13,
               fontWeight: 700,
               color: bc.text,
@@ -635,18 +617,9 @@ const Byte = memo(function Byte({
               fontFamily: "system-ui, -apple-system, sans-serif",
               pointerEvents: "auto",
               minWidth: 60,
-              cursor: onSpeechContinue ? "pointer" : "default",
             }}
           >
-            {onSpeechContinue && (
-              <span className="sr-only" aria-live="polite" aria-atomic="true">
-                {speechGate.announce}
-              </span>
-            )}
             {speech}
-            {onSpeechContinue && speechGate.indicatorVisible && (
-              <TapToContinueHint accentColor={bc.border} />
-            )}
             {/* Tail */}
             <div style={{
               position: "absolute", bottom: -9, left: "50%", transform: "translateX(-50%)",
@@ -709,8 +682,7 @@ const Byte = memo(function Byte({
           width={size}
           height={size * (220 / 180)}
           xmlns="http://www.w3.org/2000/svg"
-          aria-label={`Byte is ${state}`}
-          role="img"
+          aria-hidden="true"
           animate={
             !prefersReducedMotion && state === "cheer"
               ? { filter: ["brightness(1)", "brightness(1.4)", "brightness(1)"] }

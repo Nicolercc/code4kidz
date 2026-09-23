@@ -29,6 +29,20 @@ const progress = (completedLessons) => ({
   version: 0,
 })
 
+/**
+ * Lesson 1 opens on an intro. The remediated intro focuses a real Continue
+ * button (Enter works immediately); the original had none and needed Tab first.
+ */
+async function continuePastIntro(page) {
+  const cont = page.getByRole('button', { name: 'Continue', exact: true })
+  if (await cont.count()) await page.keyboard.press('Enter')
+  else {
+    await page.keyboard.press('Tab')
+    await page.keyboard.press('Enter')
+  }
+  await page.waitForTimeout(800)
+}
+
 /** Each screen: where to go, what progress to seed, and how to reach the state worth auditing. */
 const SCREENS = [
   { name: 'landing', url: '/', seed: null },
@@ -41,8 +55,7 @@ const SCREENS = [
     seed: progress([]),
     // Lesson 1 opens on an intro splash; continue past it to the editor.
     prepare: async (page) => {
-      await page.keyboard.press('Tab')
-      await page.keyboard.press('Enter')
+      await continuePastIntro(page)
       await page.locator('.cm-content').waitFor()
       await page.waitForTimeout(800) // let the intro's exit animation finish
     },
@@ -52,8 +65,7 @@ const SCREENS = [
     url: '/lesson/1',
     seed: progress([]),
     prepare: async (page) => {
-      await page.keyboard.press('Tab')
-      await page.keyboard.press('Enter')
+      await continuePastIntro(page)
       await page.locator('.cm-content').click()
       await page.keyboard.type('<p>oops')
       await page.waitForTimeout(3500) // validation debounce + fail-message delay
@@ -64,8 +76,7 @@ const SCREENS = [
     url: '/lesson/1',
     seed: progress([]),
     prepare: async (page) => {
-      await page.keyboard.press('Tab')
-      await page.keyboard.press('Enter')
+      await continuePastIntro(page)
       const editor = page.locator('.cm-content')
       // The hint unlocks after two counted mistakes.
       for (const attempt of ['<p>a', '<p>b']) {

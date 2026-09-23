@@ -311,7 +311,7 @@ function MapScreen({ topicName }: { topicName: string }) {
 
   return (
     <div
-      className="min-h-dvh flex flex-col items-center relative overflow-hidden"
+      className="on-dark min-h-dvh flex flex-col items-center relative overflow-hidden"
       style={{ background: 'linear-gradient(160deg, #0f0f1a 0%, #1a0a3d 40%, #0d2040 100%)' }}
     >
       <CSSStarField />
@@ -653,7 +653,7 @@ function MapScreen({ topicName }: { topicName: string }) {
             animate={{ y: [0, -5, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ByteTypewriter text={contextMessage} mood="idle" showTapHint={false} />
+            <ByteTypewriter text={contextMessage} mood="idle" />
           </motion.div>
         </div>
       )}

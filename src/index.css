@@ -21,7 +21,8 @@
   --color-brand-bg: #F8F7F4;
   --color-brand-dark: #111111;
   --color-brand-mid: #444441;
-  --color-brand-muted: #777775;
+  /* Darkened from #777775 (4.2:1) to pass WCAG AA (5.9:1) on the page background. */
+  --color-brand-muted: #5F5F5C;
   --color-brand-border: #DEDCD7;
 
   /* ── Kidz neon palette ── */
@@ -324,4 +325,47 @@
   .level2-glow {
     animation: none !important;
   }
+}
+
+/* ── Accessibility ─────────────────────────────────────────────────────────
+   A visible focus ring everywhere (there was none). Purple on light screens,
+   yellow on the dark ones (intro, onboarding, map, code editor). */
+:root {
+  --focus-ring: #5C3EBC;
+}
+.on-dark {
+  --focus-ring: #FFD966;
+}
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.cm-editor.cm-focused {
+  outline: 3px solid #FFD966;
+  outline-offset: -3px;
+}
+
+/* Lesson top-bar chips (replaces per-button JS hover handlers). */
+.lesson-chip {
+  border-radius: 22px;
+  border: 2px solid #D4CFF5;
+  background: white;
+  color: #5C3EBC;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.lesson-chip:hover {
+  background: #EDE9FB;
+  border-color: #5C3EBC;
+}
+
+.continue-pulse {
+  animation: continuePulse 1.6s ease-in-out infinite;
+}
+@keyframes continuePulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .continue-pulse { animation: none; }
 }

@@ -30,10 +30,12 @@ export default function HeartBar() {
         transition={{ duration: 0.5, ease: 'easeInOut' }}
         className="flex items-center gap-2 bg-white/50 backdrop-blur-sm px-3 py-1.5 rounded-full border border-brand-border"
       >
+        {/* The emoji row is decorative; this sentence is what assistive tech reads. */}
+        <span className="sr-only">{hearts} of 3 hearts left</span>
         {[1, 2, 3].map((i) => {
           const isLost = i > hearts;
           return (
-            <div key={i} className="relative">
+            <div key={i} className="relative" aria-hidden="true">
               <motion.div
                 initial={false}
                 animate={isLost

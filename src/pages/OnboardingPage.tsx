@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import Byte from '../components/Byte';
 import ByteTypewriter from '../components/ByteTypewriter';
-import TapToContinueHint from '../components/TapToContinueHint';
+import ContinueButton from '../components/ContinueButton';
 import { useTapGate } from '../hooks/useTapGate';
 
 const EXAMPLES = ["My Dog", "Space", "Minecraft", "Dinosaurs", "Pizza", "Robots"];
@@ -97,13 +97,12 @@ export default function OnboardingPage() {
     useCallback(() => {
       setStep(2);
     }, []),
-    'onboarding-step-1',
     step === 1
   );
 
   return (
     <div
-      className="min-h-[100dvh] w-full flex items-center justify-center overflow-hidden relative"
+      className="on-dark min-h-[100dvh] w-full flex items-center justify-center overflow-hidden relative"
       style={{ background: 'linear-gradient(145deg, #1a0a3d 0%, #3d1278 50%, #1a2a6c 100%)' }}
     >
       <Orbs />
@@ -122,16 +121,10 @@ export default function OnboardingPage() {
             className="flex flex-col items-center text-center px-6 z-10 w-full max-w-xl"
           >
             <div
-              {...step1Gate.containerProps}
-              className="relative flex flex-col items-center text-center w-full"
-              style={{
-                paddingTop: 80,
-                paddingBottom: step1Gate.indicatorVisible ? 40 : 24,
-              }}
+              {...step1Gate.regionProps}
+              className="relative flex flex-col items-center text-center w-full cursor-pointer"
+              style={{ paddingTop: 80, paddingBottom: 24 }}
             >
-              <span className="sr-only" aria-live="polite" aria-atomic="true">
-                {step1Gate.announce}
-              </span>
               <motion.div
                 className="relative"
                 style={{ paddingTop: 70 }}
@@ -154,9 +147,9 @@ export default function OnboardingPage() {
                 <p className="text-lg font-bold mt-1" style={{ color: 'white' }}>YOUR ROBOT CODING BUDDY 🤖</p>
               </motion.div>
 
-              {step1Gate.indicatorVisible && (
-                <TapToContinueHint accentColor="rgba(255,255,255,0.9)" />
-              )}
+              <div className="mt-8">
+                <ContinueButton accentColor="#ffffff" {...step1Gate.buttonProps} />
+              </div>
             </div>
           </motion.div>
         )}
@@ -198,7 +191,7 @@ export default function OnboardingPage() {
                       zIndex: 30,
                     }}
                   >
-                    <ByteTypewriter text={byteSpeech} mood="cheer" onContinue={() => {}} />
+                    <ByteTypewriter text={byteSpeech} mood="cheer" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -306,7 +299,7 @@ export default function OnboardingPage() {
               transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
               style={{ filter: 'drop-shadow(0 0 24px rgba(155,114,240,0.5))' }}
             >
-              <Byte mood="cheer" size={160} showSpeech onSpeechContinue={() => {}} />
+              <Byte mood="cheer" size={160} showSpeech />
             </motion.div>
             <h2 className="text-5xl font-black text-white uppercase break-words drop-shadow-md">
               {topicName}!
@@ -380,7 +373,7 @@ export default function OnboardingPage() {
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <Byte mood="idle" size={128} showSpeech onSpeechContinue={() => {}} />
+                <Byte mood="idle" size={128} showSpeech />
               </motion.div>
             </div>
 

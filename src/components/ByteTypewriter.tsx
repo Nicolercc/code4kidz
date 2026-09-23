@@ -1,7 +1,3 @@
-import { useEffect, useState } from 'react';
-import TapToContinueHint from './TapToContinueHint';
-import { useTapGate } from '../hooks/useTapGate';
-
 export type BubbleMood = 'idle' | 'cheer' | 'think' | 'sad' | 'story';
 
 const BUBBLE_STYLE: Record<BubbleMood, { bg: string; borderColor: string; text: string; borderW: string }> = {
@@ -15,84 +11,34 @@ const BUBBLE_STYLE: Record<BubbleMood, { bg: string; borderColor: string; text: 
 export interface ByteTypewriterProps {
   text: string;
   mood: BubbleMood;
-  /** When set, bubble is tappable and calls this. */
-  onContinue?: () => void;
-  /**
-   * Show pulsing tap hint after 1.5s. Defaults to true if onContinue is set,
-   * or use explicitly for parent-handled taps (e.g. full-screen splash).
-   */
-  showTapHint?: boolean;
-  /** After lesson-intro bar fills, pulse the hint more visibly. */
-  pulseStrength?: 'normal' | 'strong';
   /** Tighter typography for side panels (e.g. lesson) so content fits without scrolling. */
   compact?: boolean;
+  /**
+   * Make this bubble the screen's status channel: screen readers announce each
+   * new message politely. Use for at most one bubble per screen.
+   */
+  live?: boolean;
 }
 
-export default function ByteTypewriter({
-  text,
-  mood,
-  onContinue,
-  showTapHint,
-  pulseStrength = 'normal',
-  compact = false,
-}: ByteTypewriterProps) {
+/** Byte's speech bubble. Colour and border signal the mood; the text carries the meaning. */
+export default function ByteTypewriter({ text, mood, compact = false, live = false }: ByteTypewriterProps) {
   const b = BUBBLE_STYLE[mood];
-  const hintVisible = showTapHint ?? !!onContinue;
-
-  const gate = useTapGate(
-    () => {
-      onContinue?.();
-    },
-    text,
-    !!onContinue
-  );
-
-  const [passiveIndicator, setPassiveIndicator] = useState(false);
-  useEffect(() => {
-    if (onContinue) {
-      setPassiveIndicator(false);
-      return;
-    }
-    if (!hintVisible) {
-      setPassiveIndicator(false);
-      return;
-    }
-    setPassiveIndicator(false);
-    const t = window.setTimeout(() => setPassiveIndicator(true), 1500);
-    return () => window.clearTimeout(t);
-  }, [text, onContinue, hintVisible]);
-
-  const showIndicator = onContinue ? gate.indicatorVisible : passiveIndicator;
-  const liveAnnounce = onContinue ? gate.announce : passiveIndicator ? 'Press space to continue' : '';
-
-  const interactive = !!onContinue;
-
-  const bubblePadding = compact ? '10px 14px' : '14px 16px';
-  const bubbleFontSize = compact ? 14 : 16;
-  const bubbleLineHeight = compact ? 1.5 : 1.6;
-  const paddingBottomDefault = compact ? 10 : 16;
 
   return (
     <div
-      {...(interactive ? gate.containerProps : {})}
+      {...(live ? { role: 'status', 'aria-atomic': true } : {})}
       style={{
         background: b.bg,
         borderLeft: `${b.borderW} solid ${b.borderColor}`,
         borderRadius: 12,
-        padding: bubblePadding,
-        paddingBottom: hintVisible && showIndicator ? 36 : paddingBottomDefault,
-        fontSize: bubbleFontSize,
-        lineHeight: bubbleLineHeight,
+        padding: compact ? '10px 14px' : '14px 16px',
+        fontSize: compact ? 14 : 16,
+        lineHeight: compact ? 1.5 : 1.6,
         color: b.text,
         fontWeight: 500,
         position: 'relative',
-        cursor: interactive ? 'pointer' : 'default',
       }}
     >
-      <span className="sr-only" aria-live="polite" aria-atomic="true">
-        {liveAnnounce}
-      </span>
-
       {mood === 'story' && (
         <span
           style={{
@@ -108,11 +54,9 @@ export default function ByteTypewriter({
           Byte&apos;s Story
         </span>
       )}
+      {/* The green "cheer" bubble means a step just passed; say so in words too. */}
+      {live && mood === 'cheer' && text && <span className="sr-only">Correct! </span>}
       <span style={{ whiteSpace: 'pre-wrap' }}>{text}</span>
-
-      {hintVisible && showIndicator && (
-        <TapToContinueHint accentColor={b.borderColor} pulseStrength={pulseStrength} />
-      )}
     </div>
   );
 }

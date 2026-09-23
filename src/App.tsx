@@ -86,7 +86,6 @@ export function StreakBrokenOverlay() {
               "Let us start a new one RIGHT NOW."
             }
             mood="sad"
-            onContinue={() => {}}
           />
         </div>
 

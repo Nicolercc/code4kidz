@@ -14,6 +14,7 @@ import WarmUpStep from '../components/WarmUpStep';
 import Byte from '../components/Byte';
 import ByteTypewriter from '../components/ByteTypewriter';
 import FlowBackButton from '../components/FlowBackButton';
+import ContinueButton from '../components/ContinueButton';
 import { useTapGate } from '../hooks/useTapGate';
 import { useTimers } from '../hooks/useTimers';
 import { useLessonMachine } from '../hooks/useLessonMachine';
@@ -42,7 +43,6 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
 
   // Controls the Lesson 1 intro splash.
   const [splashDone, setSplashDone] = useState(false);
-  const [splashBarComplete, setSplashBarComplete] = useState(false);
 
   // Lets the lesson machine move the cursor when a step loads.
   const editorViewRef = useRef<EditorView | null>(null);
@@ -96,15 +96,17 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
   const introWordCount = introText.trim() ? introText.trim().split(/\s+/).length : 0;
   const introIsShort = introWordCount > 0 && introWordCount < 12;
 
-  const splashIntroKey = `${lesson.id}-${typeof lesson.byteIntro === 'function' ? 'fn' : String(lesson.byteIntro).slice(0, 48)}`;
-  const splashGateActive = isLesson1Warmup && !splashDone;
-  const splashGate = useTapGate(handleSplashContinue, splashIntroKey, splashGateActive);
+  const splashActive = isLesson1Warmup && !splashDone;
+  const splashGate = useTapGate(handleSplashContinue, splashActive);
 
   useEffect(() => {
-    if (!isLesson1Warmup || splashDone || !introIsShort) return;
+    if (!splashActive || !introIsShort) return;
     timers.schedule('splashAuto', handleSplashContinue, 2000);
     return () => timers.cancel('splashAuto');
-  }, [isLesson1Warmup, splashDone, introIsShort, handleSplashContinue, timers]);
+  }, [splashActive, introIsShort, handleSplashContinue, timers]);
+
+  const stepCount = lesson.steps.length - 1;
+  const stepLabel = currentStepIndex === 0 ? (isLesson1Warmup ? 'Intro' : 'Warm-up') : `Step ${currentStepIndex} of ${stepCount}`;
 
   const previewBorderClass =
     previewFlash === 'pass' ? 'border-4 border-brand-green' :
@@ -114,14 +116,14 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
   return (
     <div className="h-dvh w-full flex overflow-hidden bg-brand-bg" style={{ position: 'relative' }}>
 
-      {/* ─────────────────────────────────────────────────────────────────
-          Lesson 1 intro splash: tap/Space/Enter to continue; bottom bar is visual-only.
-      ───────────────────────────────────────────────────────────────── */}
+      {/* Lesson 1 intro. Tap anywhere, or use the focused Continue button. */}
       <AnimatePresence>
-        {isLesson1Warmup && !splashDone && (
-          <motion.div
+        {splashActive && (
+          <motion.section
             key="lesson1-splash"
-            {...splashGate.containerProps}
+            className="on-dark"
+            aria-labelledby="lesson-intro-title"
+            {...splashGate.regionProps}
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
@@ -139,180 +141,137 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
               cursor: 'pointer',
             }}
           >
-            <span className="sr-only" aria-live="polite" aria-atomic="true">
-              {splashGate.announce}
-            </span>
             <FlowBackButton style={{ zIndex: 102 }} />
 
             <Byte mood="idle" size={120} showSpeech={false} />
 
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>
+            <h1 id="lesson-intro-title" style={{ textAlign: 'center', margin: 0 }}>
+              <span style={{ display: 'block', color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>
                 Lesson {lesson.lessonNumber}
-              </div>
-              <div style={{ color: 'white', fontSize: 'clamp(18px, 5vw, 26px)', fontWeight: 900, letterSpacing: '-0.02em', padding: '0 8px' }}>
+              </span>
+              <span style={{ display: 'block', color: 'white', fontSize: 'clamp(18px, 5vw, 26px)', fontWeight: 900, letterSpacing: '-0.02em', padding: '0 8px' }}>
                 {lesson.title}
-              </div>
+              </span>
+            </h1>
+
+            <div style={{ maxWidth: 420, width: '100%' }}>
+              <ByteTypewriter text={introText} mood="cheer" />
             </div>
 
-            <div style={{ maxWidth: 420, width: '100%', pointerEvents: 'none' }}>
-              <ByteTypewriter
-                text={introText}
-                mood="cheer"
-                showTapHint={!introIsShort}
-                pulseStrength={splashBarComplete ? 'strong' : 'normal'}
-              />
-            </div>
-
-            {/* Visual-only progress bar — tap still required to advance */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 5,
-                background: 'rgba(255,255,255,0.12)',
-                pointerEvents: 'none',
-              }}
-            >
-              <motion.div
-                key={`splash-bar-${lesson.id}`}
-                initial={{ width: '0%' }}
-                animate={{ width: '100%' }}
-                transition={{ duration: 2, ease: 'linear' }}
-                onAnimationComplete={() => setSplashBarComplete(true)}
-                style={{ height: '100%', background: '#22c55e' }}
-              />
-            </div>
-          </motion.div>
+            <ContinueButton accentColor="#ffffff" {...splashGate.buttonProps} />
+          </motion.section>
         )}
       </AnimatePresence>
 
-      {/* ─────────────────────────────────────────────────────────────────
-          Top Bar
-      ───────────────────────────────────────────────────────────────── */}
-      <div className="absolute top-4 left-4 z-50">
-        <button
-          onClick={() => navigate('/map')}
-          className="flex items-center gap-1.5 font-bold text-sm transition-colors"
-          style={{ padding: '8px 16px', borderRadius: 20, border: '2px solid #D4CFF5', background: 'white', color: '#5C3EBC', cursor: 'pointer' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#EDE9FB'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#5C3EBC'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'white'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#D4CFF5'; }}
-        >
-          ✕ Exit
-        </button>
-      </div>
-      <div className="absolute top-4 right-4 z-50 flex items-center gap-3">
-        <button
-          onClick={toggleMute}
-          className="flex items-center justify-center font-bold text-sm transition-colors"
-          style={{ width: 40, height: 36, borderRadius: 18, border: '2px solid #D4CFF5', background: 'white', color: '#5C3EBC', cursor: 'pointer' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#EDE9FB'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#5C3EBC'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'white'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#D4CFF5'; }}
-          aria-label={isMuted ? 'Unmute' : 'Mute'}
-        >
-          {isMuted ? '🔇' : '🔊'}
-        </button>
-        <HeartBar />
-        <XPCounter />
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────────────
-          Panel 1: Lesson/Byte
-      ───────────────────────────────────────────────────────────────── */}
-      <div className="w-1/3 h-full relative z-10 pt-16" style={{ background: 'linear-gradient(180deg, #EDE9FB 0%, #E8E3F8 100%)', borderRight: '1px solid #D4CFF5' }}>
-        {step.type === 'warmup' && step.xp > 0 ? (
-          // FIX 5: pass lessonNumber to show "REVIEWING FROM LESSON N" badge
-          <WarmUpStep
-            bytePrompt={resolve(step.bytePrompt)}
-            instruction={resolve(step.instruction)}
-            lessonNumber={lesson.lessonNumber}
-          />
-        ) : step.type === 'warmup' && step.xp === 0 ? (
-          // Lesson 1 warmup placeholder — splash covers everything, nothing needed here
-          null
-        ) : (
-          <LessonPanel
-            instruction={resolve(step.instruction)}
-            hint={resolve(step.hint)}
-            totalSteps={lesson.steps.length - 1}
-            isWarmup={false}
-            justPassed={justPassed}
-            justFailed={justFailed}
-            isTyping={isTyping}
-            isStuck={isStuck}
-            failCount={machine.failCount}
-          />
-        )}
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────────────
-          Panel 2: Editor
-      ───────────────────────────────────────────────────────────────── */}
-      <div className="w-1/3 h-full bg-[#1A1A2E] flex flex-col relative z-20 shadow-2xl">
-        <div className="h-14 bg-[#111122] flex items-center px-4 border-b border-[#333]">
-          <div className="text-[#888] font-mono text-sm">index.html</div>
+      {/* Hidden from assistive tech (and unfocusable) while the intro covers it. */}
+      <header inert={splashActive}>
+        <div className="absolute top-4 left-4 z-50">
+          <button
+            type="button"
+            onClick={() => navigate('/map')}
+            className="lesson-chip flex items-center gap-1.5 font-bold text-sm"
+            style={{ padding: '8px 16px' }}
+          >
+            <span aria-hidden="true">✕</span> Exit
+          </button>
         </div>
-        <div className="flex-1 relative overflow-hidden">
-          {/* FIX 2: pass onEditorReady and showHighlight to Editor */}
-          <Editor
-            value={code}
-            onChange={onCodeChange}
-            onEditorReady={(view) => { editorViewRef.current = view; }}
-            showHighlight={showHighlight}
-          />
+        <div className="absolute top-4 right-4 z-50 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={toggleMute}
+            className="lesson-chip flex items-center justify-center font-bold text-sm"
+            style={{ width: 44, height: 44 }}
+            aria-label={isMuted ? 'Turn sound effects on' : 'Turn sound effects off'}
+          >
+            <span aria-hidden="true">{isMuted ? '🔇' : '🔊'}</span>
+          </button>
+          <HeartBar />
+          <XPCounter />
+        </div>
+      </header>
 
-          {/* Validation Bar */}
-          <div className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-300 ${
-            phase === 'passed' ? 'translate-y-0 bg-brand-green text-white' :
-            phase === 'failed' && step.type !== 'warmup'
-              ? 'translate-y-0 bg-brand-red text-white' :
-            'translate-y-full bg-transparent'
-          }`}>
-            <div className="font-bold text-lg flex items-center gap-2">
-              {phase === 'passed' ? '✓ Perfect!' : '✕ Keep trying...'}
+      <main className="flex flex-1 h-full w-full" aria-labelledby="lesson-heading" inert={splashActive}>
+        <h1 id="lesson-heading" className="sr-only">
+          Lesson {lesson.lessonNumber}: {lesson.title} — {stepLabel}
+        </h1>
+
+        <section aria-label="Instructions" className="w-1/3 h-full relative z-10 pt-16" style={{ background: 'linear-gradient(180deg, #EDE9FB 0%, #E8E3F8 100%)', borderRight: '1px solid #D4CFF5' }}>
+          {step.type === 'warmup' && step.xp > 0 ? (
+            <WarmUpStep
+              bytePrompt={resolve(step.bytePrompt)}
+              instruction={resolve(step.instruction)}
+              lessonNumber={lesson.lessonNumber}
+            />
+          ) : isLesson1Warmup ? null : (
+            <LessonPanel
+              instruction={resolve(step.instruction)}
+              hint={resolve(step.hint)}
+              totalSteps={stepCount}
+              isWarmup={false}
+              justPassed={justPassed}
+              justFailed={justFailed}
+              isTyping={isTyping}
+              isStuck={isStuck}
+              failCount={machine.failCount}
+            />
+          )}
+        </section>
+
+        <section aria-label="Code editor" className="on-dark w-1/3 h-full bg-[#1A1A2E] flex flex-col relative z-20 shadow-2xl">
+          <div className="h-14 bg-[#111122] flex items-center px-4 border-b border-[#333]">
+            <div className="text-[#A9A9B8] font-mono text-sm" aria-hidden="true">index.html</div>
+          </div>
+          <div className="flex-1 relative overflow-hidden">
+            <Editor
+              value={code}
+              onChange={onCodeChange}
+              onEditorReady={(view) => { editorViewRef.current = view; }}
+              showHighlight={showHighlight}
+            />
+
+            {/* Visual result bar. Screen readers get the same news from Byte's status bubble. */}
+            <div
+              aria-hidden="true"
+              className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-300 ${
+                phase === 'passed' ? 'translate-y-0 bg-brand-green text-white' :
+                phase === 'failed' && step.type !== 'warmup' ? 'translate-y-0 bg-brand-red text-white' :
+                'translate-y-full bg-transparent'
+              }`}
+            >
+              <div className="font-bold text-lg flex items-center gap-2">
+                {phase === 'passed' ? '✓ Perfect!' : phase === 'failed' ? '✕ Keep trying...' : null}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* ─────────────────────────────────────────────────────────────────
-          Panel 3: Preview
-      ───────────────────────────────────────────────────────────────── */}
-      <div className="w-1/3 h-full bg-brand-bg p-4 flex flex-col relative z-10 pt-16">
-        <div className="mb-2 text-brand-muted font-bold text-sm uppercase tracking-wider pl-2">
-          Live Preview
-        </div>
-        <motion.div
-          className={`flex-1 rounded-xl overflow-hidden shadow-lg transition-colors duration-500 ${previewBorderClass}`}
-          animate={previewFlash === 'fail'
-            ? { boxShadow: ['0 0 0 0 rgba(185,28,28,0)', '0 0 0 6px rgba(185,28,28,0.4)', '0 0 0 0 rgba(185,28,28,0)'] }
-            : { boxShadow: '0 0 0 0 rgba(0,0,0,0)' }
-          }
-          transition={previewFlash === 'fail' ? { duration: 1, repeat: 2 } : { duration: 0.5 }}
-        >
-          {/* Beat 2: green overlay glow on output */}
-          <AnimatePresence>
-            {previewGlow && (
-              <motion.div
-                initial={{ opacity: 0.35 }}
-                animate={{ opacity: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1.5, ease: 'easeOut' }}
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'rgba(26,122,78,0.08)',
-                  pointerEvents: 'none',
-                  zIndex: 5,
-                }}
-              />
-            )}
-          </AnimatePresence>
-          <Preview code={code} />
-        </motion.div>
-      </div>
+        <section aria-label="Live preview" className="w-1/3 h-full bg-brand-bg p-4 flex flex-col relative z-10 pt-16">
+          <div className="mb-2 text-brand-muted font-bold text-sm uppercase tracking-wider pl-2" aria-hidden="true">
+            Live Preview
+          </div>
+          <motion.div
+            className={`flex-1 rounded-xl overflow-hidden shadow-lg transition-colors duration-500 ${previewBorderClass}`}
+            animate={previewFlash === 'fail'
+              ? { boxShadow: ['0 0 0 0 rgba(185,28,28,0)', '0 0 0 6px rgba(185,28,28,0.4)', '0 0 0 0 rgba(185,28,28,0)'] }
+              : { boxShadow: '0 0 0 0 rgba(0,0,0,0)' }
+            }
+            transition={previewFlash === 'fail' ? { duration: 1, repeat: 2 } : { duration: 0.5 }}
+          >
+            <AnimatePresence>
+              {previewGlow && (
+                <motion.div
+                  initial={{ opacity: 0.35 }}
+                  animate={{ opacity: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1.5, ease: 'easeOut' }}
+                  style={{ position: 'absolute', inset: 0, background: 'rgba(26,122,78,0.08)', pointerEvents: 'none', zIndex: 5 }}
+                />
+              )}
+            </AnimatePresence>
+            <Preview code={code} />
+          </motion.div>
+        </section>
+      </main>
     </div>
   );
 }

@@ -64,6 +64,7 @@ export default function Editor({ value, onChange, onEditorReady, showHighlight }
         basicSetup,
         html(),
         myTheme,
+        EditorView.contentAttributes.of({ 'aria-label': 'Your code' }),
         EditorView.updateListener.of((update) => {
           // FIX 3: skip onChange when the update was triggered programmatically
           if (update.docChanged && !isProgrammaticRef.current) {
