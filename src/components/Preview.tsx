@@ -19,9 +19,10 @@ const SHELL = (code: string) => {
     </style>`;
 
   if (isStructuralHtml) {
-    const lower = trimmed.toLowerCase();
-    if (lower.includes('</head>')) {
-      return '<!DOCTYPE html>' + trimmed.replace(/<\/head>/i, styleTag + '</head>');
+    // Defaults go first in <head> so the learner's own <style> comes later and wins
+    // the cascade. (Appending them before </head> overrode "background-color" etc.)
+    if (/<head[\s>]/i.test(trimmed)) {
+      return '<!DOCTYPE html>' + trimmed.replace(/<head(\s[^>]*)?>/i, (open) => open + styleTag);
     }
     return '<!DOCTYPE html>' + trimmed;
   }

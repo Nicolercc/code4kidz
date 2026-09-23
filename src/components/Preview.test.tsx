@@ -18,6 +18,16 @@ describe('Preview', () => {
     expect(getByText('Space facts')).toBeTruthy()
   })
 
+  it("puts the preview's default styles before the learner's, so the learner's CSS wins", () => {
+    const code = '<html><head><title>T</title><style>body { background-color: lightyellow; }</style></head><body></body></html>'
+    const { container } = render(<Preview code={code} />)
+    const doc = container.querySelector('iframe')!.getAttribute('srcdoc')!
+    const defaults = doc.indexOf('background: #FAFAF8')
+    const learners = doc.indexOf('background-color: lightyellow')
+    expect(defaults).toBeGreaterThan(-1)
+    expect(defaults).toBeLessThan(learners)
+  })
+
   it('renders the kid code into the frame', () => {
     const { container } = render(<Preview code="<h1>Space</h1>" />)
     expect(container.querySelector('iframe')!.getAttribute('srcdoc')).toContain('<h1>Space</h1>')
