@@ -1,4 +1,5 @@
 import type { Lesson } from './lesson-01'
+import { hasDeclaredStyle } from '../../utils/htmlChecks'
 
 export const lesson06: Lesson = {
   id: 'lesson-06',
@@ -79,8 +80,10 @@ You learned this in Lesson 5.`,
         `  </body>\n` +
         `</html>`,
       xp: 10,
-      validate: (doc: Document) =>
-        doc.querySelector('img[src]') !== null,
+      validate: (doc: Document) => {
+        const src = doc.querySelector('img')?.getAttribute('src')?.trim() ?? ''
+        return src !== '' && src !== 'IMAGE_URL_HERE'
+      },
     },
 
     {
@@ -153,13 +156,8 @@ You learned this in Lesson 5.`,
         `  </body>\n` +
         `</html>`,
       xp: 10,
-      validate: (_doc: Document, _raw?: string, iframeWin?: Window) => {
-        if (!iframeWin) return false
-        const img = iframeWin.document.querySelector('img') as HTMLImageElement | null
-        if (!img) return false
-        const width = iframeWin.getComputedStyle(img).width
-        return width !== '' && width !== 'auto'
-      },
+      // A rendered image always has a computed pixel width, so check the kid's CSS instead.
+      validate: (doc: Document) => hasDeclaredStyle(doc, 'img', 'width'),
     },
 
     {

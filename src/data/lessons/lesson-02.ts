@@ -1,4 +1,5 @@
 import type { Lesson } from './lesson-01'
+import { tagsBalanced } from '../../utils/htmlChecks'
 
 export const lesson02: Lesson = {
   id: 'lesson-02',
@@ -43,8 +44,8 @@ Inside the body — add <h1>{topic}</h1>.
 You already know this from Lesson 1!`,
       startingCode: '',
       xp: 10,
-      validate: (_doc, rawCode?: string) => {
-        const code = (rawCode ?? '').trim().toLowerCase()
+      validate: (_doc, rawCode) => {
+        const code = rawCode.trim().toLowerCase()
         // DOMParser auto-inserts html/body; validate structure from raw code.
         const hasHtml = /<html(\s[^>]*)?>/.test(code) && code.includes('</html>')
         const hasBody = code.includes('<body>') && code.includes('</body>')
@@ -181,13 +182,7 @@ Look at each closing tag. Which one is missing its slash?`,
   </body>
 </html>`,
       xp: 10,
-      validate: (_doc, rawCode?: string) => {
-        if (rawCode !== undefined) {
-          return rawCode.includes('</h2>') || rawCode.includes('</H2>')
-        }
-        const headings = _doc.querySelectorAll('h2')
-        return headings.length >= 1
-      }
+      validate: (_doc, rawCode) => tagsBalanced(rawCode, 'h2')
     },
 
     // ── STEP 5: COMBINE — Second h2, full hierarchy ──

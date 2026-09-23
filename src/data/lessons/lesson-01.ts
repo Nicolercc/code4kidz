@@ -1,3 +1,5 @@
+import { tagsBalanced, textOf } from '../../utils/htmlChecks'
+
 type StrOrFn = string | ((topic: string) => string)
 
 export interface LessonStep {
@@ -11,8 +13,8 @@ export interface LessonStep {
   xp: number
   // FIX 3: if true, the step will NOT pass until the kid types at least one character
   editRequired?: boolean
-  // iframeWin is provided for CSS computed-style checks (lessons 4+)
-  validate: (doc: Document, rawCode?: string, iframeWin?: Window) => boolean
+  /** Pure check of the kid's code. See utils/htmlChecks.ts for the helpers. */
+  validate: (doc: Document, rawCode: string, topic: string) => boolean
 }
 
 export interface Lesson {
@@ -88,8 +90,8 @@ The / in the closing tag tells the browser where it ends.`,
       startingCode: '',
       xp: 10,
       // Use rawCode — DOMParser always inserts <html> even for empty strings.
-      validate: (_doc, rawCode?: string) => {
-        const code = (rawCode ?? '').trim().toLowerCase()
+      validate: (_doc, rawCode) => {
+        const code = rawCode.trim().toLowerCase()
         return /<html(\s[^>]*)?>/.test(code) && code.includes('</html>')
       }
     },
@@ -114,8 +116,8 @@ It should look like this:
 Notice it is INSIDE — between the opening and closing html tags.`,
       startingCode: '<html>\n  \n</html>',
       xp: 10,
-      validate: (_doc, rawCode?: string) => {
-        const code = (rawCode ?? '').trim().toLowerCase()
+      validate: (_doc, rawCode) => {
+        const code = rawCode.trim().toLowerCase()
         return code.includes('<head>') && code.includes('</head>')
       }
     },
@@ -170,13 +172,8 @@ Look at the body tags: does one of them have a / and the other does not?`,
   <body>
 </html>`,
       xp: 10,
-      // FIX 6: raw code check — browser auto-closes tags in DOM, so check rawCode
-      validate: (_doc, rawCode?: string) => {
-        if (rawCode !== undefined) {
-          return rawCode.includes('</body>') || rawCode.includes('</BODY>')
-        }
-        return _doc.querySelector('body') !== null
-      }
+      // The parser auto-closes tags, so check the raw text for a matching </body>.
+      validate: (_doc, rawCode) => tagsBalanced(rawCode, 'body')
     },
 
     // ── STEP 5: COMBINE — First words on screen ──
@@ -209,9 +206,10 @@ Change the text between the h1 tags to anything about {topic}.
   </body>
 </html>`,
       xp: 10,
-      validate: (doc) => {
-        const h1 = doc.querySelector('h1')
-        return h1 !== null && (h1.textContent?.length ?? 0) > 0
+      // "Change the words": the starter h1 is just the topic, so it must differ.
+      validate: (doc, _rawCode, topic) => {
+        const text = textOf(doc, 'h1')
+        return text !== '' && text.toLowerCase() !== topic.trim().toLowerCase()
       }
     },
   ]

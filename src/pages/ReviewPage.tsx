@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type RefObject } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { lesson01, type Lesson } from '../data/lessons/lesson-01';
@@ -41,7 +41,6 @@ function ReviewScreen({ lesson, id, topicName }: { lesson: Lesson; id: string; t
   const [code, setCode] = useState('');
   const [validationState, setValidationState] = useState<'idle' | 'pass' | 'fail'>('idle');
 
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resolve = (field: string | ((t: string) => string) | undefined): string => {
@@ -93,7 +92,7 @@ function ReviewScreen({ lesson, id, topicName }: { lesson: Lesson; id: string; t
 
     debounceRef.current = setTimeout(() => {
       if (!step) return;
-      const result = validate(iframeRef as RefObject<HTMLIFrameElement>, step, newCode);
+      const result = validate(step, newCode, topicName);
 
       if (result === 'pass') {
         setValidationState('pass');
@@ -145,7 +144,7 @@ function ReviewScreen({ lesson, id, topicName }: { lesson: Lesson; id: string; t
       {/* Panel 3: Preview */}
       <div className="w-1/3 h-full bg-brand-bg p-4 flex flex-col relative z-10 pt-16">
         <div className="flex-1 rounded-xl overflow-hidden shadow-lg border-4 border-white">
-          <Preview code={code} onIframeReady={(iframe) => { iframeRef.current = iframe; }} />
+          <Preview code={code} />
         </div>
       </div>
     </div>

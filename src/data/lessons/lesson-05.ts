@@ -1,4 +1,5 @@
 import type { Lesson } from './lesson-01'
+import { hasDeclaredStyle, tagsBalanced } from '../../utils/htmlChecks'
 
 export const lesson05: Lesson = {
   id: 'lesson-05',
@@ -45,12 +46,7 @@ You learned this in Lesson 4.`,
             `Change red to any color name you like.`,
       startingCode: '',
       xp: 10,
-      validate: (_doc: Document, _raw?: string, iframeWin?: Window) => {
-        if (!iframeWin) return false
-        const h1 = iframeWin.document.querySelector('h1')
-        if (!h1) return false
-        return iframeWin.getComputedStyle(h1).color !== 'rgb(0, 0, 0)'
-      },
+      validate: (doc: Document) => hasDeclaredStyle(doc, 'h1', 'color'),
     },
 
     {
@@ -156,8 +152,8 @@ You learned this in Lesson 4.`,
         `  <li>Third thing about ${topic}</li>\n` +
         `</ul>`,
       xp: 10,
-      validate: (_doc: Document, rawCode?: string) =>
-        (rawCode ?? '').includes('</li>') || (rawCode ?? '').includes('</LI>'),
+      // The starter already contains two </li>, so "includes </li>" passed unfixed.
+      validate: (_doc, rawCode) => tagsBalanced(rawCode, 'li'),
     },
 
     {
@@ -197,12 +193,7 @@ You learned this in Lesson 4.`,
         `  </body>\n` +
         `</html>`,
       xp: 10,
-      validate: (_doc: Document, _raw?: string, iframeWin?: Window) => {
-        if (!iframeWin) return false
-        const li = iframeWin.document.querySelector('li')
-        if (!li) return false
-        return iframeWin.getComputedStyle(li).color !== 'rgb(0, 0, 0)'
-      },
+      validate: (doc: Document) => hasDeclaredStyle(doc, 'li', 'color'),
     },
 
     {

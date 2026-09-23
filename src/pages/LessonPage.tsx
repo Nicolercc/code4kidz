@@ -112,7 +112,6 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
   // FIX 2: expose EditorView to position the cursor when a step loads
   const editorViewRef = useRef<EditorView | null>(null);
 
-  const iframeRef      = useRef<HTMLIFrameElement>(null);
   const validationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -329,10 +328,9 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
     validationTimerRef.current = setTimeout(() => {
       if (validationStateRef.current === 'pass') return;
       if (!stepRef.current) return;
-      if (!iframeRef.current) return;
       if (passRecordedRef.current) return;
 
-      const result = validate(iframeRef, stepRef.current, lastCodeRef.current);
+      const result = validate(stepRef.current, lastCodeRef.current, topicName);
       const codeSnapshot = lastCodeRef.current;
 
       if (result === 'pass') {
@@ -581,7 +579,6 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
           <WarmUpStep
             bytePrompt={resolve(step.bytePrompt)}
             instruction={resolve(step.instruction)}
-            onComplete={advanceStep}
             lessonNumber={lesson.lessonNumber}
           />
         ) : step.type === 'warmup' && step.xp === 0 ? (
@@ -664,7 +661,7 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
               />
             )}
           </AnimatePresence>
-          <Preview code={code} onIframeReady={(iframe) => { iframeRef.current = iframe; }} />
+          <Preview code={code} />
         </motion.div>
       </div>
     </div>

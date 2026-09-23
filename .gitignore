@@ -25,3 +25,6 @@ Thumbs.db
 .replit
 replit.nix
 .upm/
+
+# test runner cache
+.vitest/

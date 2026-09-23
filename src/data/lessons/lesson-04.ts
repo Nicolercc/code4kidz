@@ -1,4 +1,5 @@
 import type { Lesson } from './lesson-01'
+import { hasDeclaredStyle } from '../../utils/htmlChecks'
 
 export const lesson04: Lesson = {
   id: 'lesson-04',
@@ -122,13 +123,7 @@ You learned this in Lesson 3.`,
         `  </body>\n` +
         `</html>`,
       xp: 10,
-      validate: (_doc: Document, _raw?: string, iframeWin?: Window) => {
-        if (!iframeWin) return false
-        const h1 = iframeWin.document.querySelector('h1')
-        if (!h1) return false
-        const color = iframeWin.getComputedStyle(h1).color
-        return color !== 'rgb(0, 0, 0)' && color !== ''
-      },
+      validate: (doc: Document) => hasDeclaredStyle(doc, 'h1', 'color'),
     },
 
     {
@@ -171,11 +166,7 @@ You learned this in Lesson 3.`,
         `  </body>\n` +
         `</html>`,
       xp: 10,
-      validate: (_doc: Document, _raw?: string, iframeWin?: Window) => {
-        if (!iframeWin) return false
-        const bg = iframeWin.getComputedStyle(iframeWin.document.body).backgroundColor
-        return bg !== 'rgba(0, 0, 0, 0)' && bg !== 'rgb(255, 255, 255)' && bg !== ''
-      },
+      validate: (doc: Document) => hasDeclaredStyle(doc, 'body', 'background-color', 'background'),
     },
 
     {
@@ -213,12 +204,8 @@ You learned this in Lesson 3.`,
         `  </body>\n` +
         `</html>`,
       xp: 10,
-      validate: (_doc: Document, _raw?: string, iframeWin?: Window) => {
-        if (!iframeWin) return false
-        const h1 = iframeWin.document.querySelector('h1')
-        if (!h1) return false
-        return iframeWin.getComputedStyle(h1).color !== 'rgb(0, 0, 0)'
-      },
+      // "color purple" (no colon) is dropped by the CSS parser, so this fails until fixed.
+      validate: (doc: Document) => hasDeclaredStyle(doc, 'h1', 'color'),
     },
 
     {
@@ -261,14 +248,8 @@ You learned this in Lesson 3.`,
         `  </body>\n` +
         `</html>`,
       xp: 10,
-      validate: (_doc: Document, _raw?: string, iframeWin?: Window) => {
-        if (!iframeWin) return false
-        const iDoc = iframeWin.document
-        const h1 = iDoc.querySelector('h1')
-        const hasBackground = iframeWin.getComputedStyle(iDoc.body).backgroundColor !== 'rgba(0, 0, 0, 0)'
-        const hasColor = h1 && iframeWin.getComputedStyle(h1).color !== 'rgb(0, 0, 0)'
-        return hasBackground && !!hasColor
-      },
+      // The starter already colors body and h1; this step is about h2 and p.
+      validate: (doc: Document) => hasDeclaredStyle(doc, 'h2', 'color') && hasDeclaredStyle(doc, 'p', 'color'),
     },
   ],
 }

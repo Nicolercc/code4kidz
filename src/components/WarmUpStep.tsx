@@ -7,13 +7,12 @@ import FlowBackButton from './FlowBackButton';
 interface WarmUpStepProps {
   bytePrompt: string;
   instruction: string;
-  onComplete: () => void;
   // FIX 5: used to show "REVIEWING FROM LESSON N" label
   lessonNumber: number;
 }
 
-// `onComplete` is accepted but not called yet: warm-ups currently advance on any
-// editor keystroke (see utils/validator.ts). Fixed in the validator work.
+// Warm-ups advance like any other step: when the kid's code in the editor
+// passes the step's validator (see LessonPage handleCodeChange).
 export default function WarmUpStep({ bytePrompt, instruction, lessonNumber }: WarmUpStepProps) {
   const [timeLeft, setTimeLeft] = useState(60);
 

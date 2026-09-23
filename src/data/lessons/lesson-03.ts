@@ -1,4 +1,5 @@
 import type { Lesson } from './lesson-01'
+import { tagsBalanced } from '../../utils/htmlChecks'
 
 export const lesson03: Lesson = {
   id: 'lesson-03',
@@ -164,8 +165,8 @@ You learned this in Lesson 2.`,
         `  </body>\n` +
         `</html>`,
       xp: 10,
-      validate: (_doc: Document, rawCode?: string) =>
-        (rawCode ?? '').includes('</p>') || (rawCode ?? '').includes('</P>'),
+      // The starter already contains two </p>, so "includes </p>" passed unfixed.
+      validate: (_doc, rawCode) => tagsBalanced(rawCode, 'p'),
     },
 
     {
@@ -199,10 +200,16 @@ You learned this in Lesson 2.`,
         `  </body>\n` +
         `</html>`,
       xp: 10,
-      validate: (doc: Document) =>
-        doc.querySelector('h1') !== null &&
-        doc.querySelector('h2') !== null &&
-        doc.querySelectorAll('p').length >= 3,
+      // Every placeholder ("Write ... here.") must be replaced with real words.
+      validate: (doc: Document) => {
+        const paragraphs = Array.from(doc.querySelectorAll('p'), (p) => p.textContent?.trim() ?? '')
+        return (
+          doc.querySelector('h1') !== null &&
+          doc.querySelector('h2') !== null &&
+          paragraphs.length >= 3 &&
+          paragraphs.every((text) => text !== '' && !/^write .* here\.?$/i.test(text))
+        )
+      },
     },
   ],
 }

@@ -1,33 +1,17 @@
 import type { LessonStep } from '../data/lessons/lesson-01'
-import { type RefObject } from 'react'
+import { parseHtml } from './htmlChecks'
 
-export type ValidationResult = 'pass' | 'fail' | 'error'
+export type ValidationResult = 'pass' | 'fail'
 
-export function validate(
-  iframeRef: RefObject<HTMLIFrameElement | null>,
-  step: LessonStep,
-  rawCode?: string
-): ValidationResult {
+/**
+ * Check the kid's code for one step. Pure: it depends only on the code and
+ * topic, never on the preview iframe, so it gives the same answer every time
+ * and can be unit-tested (see data/lessons/lessons.test.ts).
+ */
+export function validate(step: LessonStep, rawCode: string, topic: string): ValidationResult {
   try {
-    // Warm-up steps are not gated here — WarmUpStep / splash controls flow.
-    if (step.type === 'warmup') return 'pass'
-
-    // Get the iframe's window so CSS validators can call getComputedStyle
-    const iframeWin = iframeRef.current?.contentWindow ?? undefined
-
-    // Parse the kid's raw typed code using DOMParser (fast, no timing issues)
-    // CSS validators must use iframeWin instead of doc for computed style checks
-    if (rawCode !== undefined) {
-      const parser = new DOMParser()
-      const doc = parser.parseFromString(rawCode, 'text/html')
-      return step.validate(doc, rawCode, iframeWin) ? 'pass' : 'fail'
-    }
-
-    // Fallback: use iframe contentDocument if no rawCode provided
-    const doc = iframeRef.current?.contentDocument
-    if (!doc) return 'error'
-    return step.validate(doc, undefined, iframeWin) ? 'pass' : 'fail'
+    return step.validate(parseHtml(rawCode), rawCode, topic) ? 'pass' : 'fail'
   } catch {
-    return 'fail' // NEVER crash on bad kid code
+    return 'fail' // never crash on half-typed kid code
   }
 }
