@@ -1,12 +1,22 @@
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 
 import LandingPage from './pages/LandingPage';
 import OnboardingPage from './pages/OnboardingPage';
 import MapPage from './pages/MapPage';
-import LessonPage from './pages/LessonPage';
-import ReviewPage from './pages/ReviewPage';
-import CompletePage from './pages/CompletePage';
+// The editor screens pull in CodeMirror and confetti; load them on first visit
+// so the landing page and map stay light.
+const LessonPage = lazy(() => import('./pages/LessonPage'));
+const ReviewPage = lazy(() => import('./pages/ReviewPage'));
+const CompletePage = lazy(() => import('./pages/CompletePage'));
+
+function PageLoading() {
+  return (
+    <div role="status" className="min-h-dvh flex items-center justify-center bg-brand-bg text-brand-dark font-bold">
+      Loading your lesson…
+    </div>
+  );
+}
 import NotFoundPage from './pages/NotFoundPage';
 import { useGameStore } from './store/gameStore';
 import ByteTypewriter from './components/ByteTypewriter';
@@ -112,6 +122,7 @@ function App() {
         <AnimatePresence>
           <StreakBrokenOverlay />
         </AnimatePresence>
+        <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
@@ -121,6 +132,7 @@ function App() {
           <Route path="/complete/:id" element={<CompletePage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
       </MotionConfig>
     </ErrorBoundary>

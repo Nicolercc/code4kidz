@@ -369,3 +369,11 @@
 @media (prefers-reduced-motion: reduce) {
   .continue-pulse { animation: none; }
 }
+
+/* Map star field: no twinkling or shooting stars for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .map-stars * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
