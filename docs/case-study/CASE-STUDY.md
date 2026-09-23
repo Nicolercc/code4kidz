@@ -78,7 +78,7 @@ real issues, including warm-up text that failed contrast on a screen my first re
 |---|---|---|
 | axe violations per screen | 3–6 | 0 |
 | Answer-check test cases failing | 29 / 123 | 0 / 123 |
-| Automated tests | 0 | 197 unit/component + 12 end-to-end |
+| Automated tests | 0 | 198 unit/component + 12 end-to-end |
 | First-load JavaScript (gzip) | 367 KB | 146 KB |
 | Usable at 375px | no | yes: a full lesson and review completed |
 
