@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { EditorView } from '@codemirror/view';
+import { EditorView, keymap } from '@codemirror/view';
 import { html } from '@codemirror/lang-html';
-import { EditorState } from '@codemirror/state';
+import { EditorState, Prec } from '@codemirror/state';
 import { basicSetup } from 'codemirror';
 
 interface EditorProps {
@@ -11,9 +11,11 @@ interface EditorProps {
   onEditorReady?: (view: EditorView) => void;
   // FIX 2: show a purple tint overlay that fades out (highlights scaffolded code)
   showHighlight?: boolean;
+  /** Ctrl/Cmd+Enter inside the editor. */
+  onSubmit?: () => void;
 }
 
-export default function Editor({ value, onChange, onEditorReady, showHighlight }: EditorProps) {
+export default function Editor({ value, onChange, onEditorReady, showHighlight, onSubmit }: EditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   // FIX 3: prevents programmatic value updates from triggering onChange
@@ -25,9 +27,11 @@ export default function Editor({ value, onChange, onEditorReady, showHighlight }
   // onChange forever (stale step, failCount and XP in LessonPage).
   const onChangeRef = useRef(onChange);
   const onEditorReadyRef = useRef(onEditorReady);
+  const onSubmitRef = useRef(onSubmit);
   useEffect(() => {
     onChangeRef.current = onChange;
     onEditorReadyRef.current = onEditorReady;
+    onSubmitRef.current = onSubmit;
   });
 
   useEffect(() => {
@@ -64,7 +68,9 @@ export default function Editor({ value, onChange, onEditorReady, showHighlight }
         basicSetup,
         html(),
         myTheme,
-        EditorView.contentAttributes.of({ 'aria-label': 'Your code' }),
+        EditorView.contentAttributes.of({ 'aria-label': 'Your code', 'aria-keyshortcuts': 'Control+Enter Meta+Enter' }),
+        // Ctrl+Enter everywhere, plus Cmd+Enter on macOS ("Mod" is Cmd there).
+        Prec.highest(keymap.of(['Ctrl-Enter', 'Mod-Enter'].map((key) => ({ key, run: () => { onSubmitRef.current?.(); return true; } })))),
         EditorView.updateListener.of((update) => {
           // FIX 3: skip onChange when the update was triggered programmatically
           if (update.docChanged && !isProgrammaticRef.current) {

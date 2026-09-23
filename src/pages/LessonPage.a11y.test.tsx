@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { EditorView } from '@codemirror/view'
 import LessonPage from './LessonPage'
 import { useGameStore } from '../store/gameStore'
-import { FAIL_MESSAGE_DELAY_MS, VALIDATION_DEBOUNCE_MS } from '../hooks/useLessonMachine'
+import { VALIDATION_DEBOUNCE_MS } from '../hooks/useLessonMachine'
 
 vi.mock('../utils/sounds', () => ({ play: vi.fn() }))
 
@@ -66,8 +66,10 @@ describe('LessonPage accessibility', () => {
     expect(screen.queryByText(/keep trying/i)).toBeNull()
 
     typeCode('<p>oops')
-    act(() => vi.advanceTimersByTime(VALIDATION_DEBOUNCE_MS + FAIL_MESSAGE_DELAY_MS))
+    act(() => vi.advanceTimersByTime(VALIDATION_DEBOUNCE_MS * 10))
+    expect(screen.getByRole('status').textContent).not.toMatch(/not quite/i) // pausing is never a mistake
 
+    fireEvent.click(screen.getByRole('button', { name: 'Check my code' }))
     expect(screen.getByRole('status').textContent).toMatch(/not quite/i)
   })
 
@@ -80,11 +82,7 @@ describe('LessonPage accessibility', () => {
   it('makes the hint a real disclosure whose text is readable', () => {
     renderLesson()
     continuePastIntro()
-    for (const attempt of ['<p>a', '<p>b']) {
-      typeCode(attempt)
-      act(() => vi.advanceTimersByTime(VALIDATION_DEBOUNCE_MS + FAIL_MESSAGE_DELAY_MS))
-    }
-
+    // Available from the start, no failures needed.
     const toggle = screen.getByRole('button', { name: /hint/i })
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     fireEvent.click(toggle)

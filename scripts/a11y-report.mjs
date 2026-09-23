@@ -68,7 +68,11 @@ const SCREENS = [
       await continuePastIntro(page)
       await page.locator('.cm-content').click()
       await page.keyboard.type('<p>oops')
-      await page.waitForTimeout(3500) // validation debounce + fail-message delay
+      // Mistakes only count on an explicit check (the original counted a 2.5s pause).
+      const check = page.getByRole('button', { name: 'Check my code' })
+      if (await check.count()) await check.click()
+      else await page.waitForTimeout(3500)
+      await page.waitForTimeout(500)
     },
   },
   {
@@ -77,12 +81,13 @@ const SCREENS = [
     seed: progress([]),
     prepare: async (page) => {
       await continuePastIntro(page)
-      const editor = page.locator('.cm-content')
-      // The hint unlocks after two counted mistakes.
-      for (const attempt of ['<p>a', '<p>b']) {
-        await editor.click()
-        await page.keyboard.type(attempt)
-        await page.waitForTimeout(3500)
+      // The original only unlocked the hint after two counted mistakes.
+      if (!(await page.getByRole('button', { name: /hint/i }).count())) {
+        for (const attempt of ['<p>a', '<p>b']) {
+          await page.locator('.cm-content').click()
+          await page.keyboard.type(attempt)
+          await page.waitForTimeout(3500)
+        }
       }
       await page.getByRole('button', { name: /hint/i }).click()
       await page.waitForTimeout(600)

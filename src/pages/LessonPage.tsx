@@ -81,7 +81,7 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
     topic: topicName,
     editorViewRef,
   });
-  const { phase, isTyping, isStuck, justPassed, justFailed, previewFlash, previewGlow, showHighlight, onCodeChange } = machine;
+  const { phase, isTyping, isStuck, justPassed, justFailed, previewFlash, previewGlow, showHighlight, onCodeChange, checkNow } = machine;
 
   // Lesson 1's warm-up is the intro splash rather than an editor step.
   const isLesson1Warmup = step.type === 'warmup' && step.xp === 0;
@@ -212,14 +212,25 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
               justFailed={justFailed}
               isTyping={isTyping}
               isStuck={isStuck}
-              failCount={machine.failCount}
-            />
+              />
           )}
         </section>
 
         <section aria-label="Code editor" className="on-dark w-1/3 h-full bg-[#1A1A2E] flex flex-col relative z-20 shadow-2xl">
-          <div className="h-14 bg-[#111122] flex items-center px-4 border-b border-[#333]">
+          <div className="h-14 bg-[#111122] flex items-center justify-between gap-3 px-4 border-b border-[#333]">
             <div className="text-[#A9A9B8] font-mono text-sm" aria-hidden="true">index.html</div>
+            {!isLesson1Warmup && (
+              <button
+                type="button"
+                onClick={checkNow}
+                disabled={phase === 'passed'}
+                aria-keyshortcuts="Control+Enter Meta+Enter"
+                className="rounded-full bg-[#FFD966] text-[#1A1A2E] font-bold text-sm px-4 disabled:opacity-60"
+                style={{ minHeight: 40 }}
+              >
+                Check my code
+              </button>
+            )}
           </div>
           <div className="flex-1 relative overflow-hidden">
             <Editor
@@ -227,6 +238,7 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
               onChange={onCodeChange}
               onEditorReady={(view) => { editorViewRef.current = view; }}
               showHighlight={showHighlight}
+              onSubmit={checkNow}
             />
 
             {/* Visual result bar. Screen readers get the same news from Byte's status bubble. */}

@@ -1,24 +1,35 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { lesson01 } from '../data/lessons/lesson-01'
+import { lesson02 as lessonTwo } from '../data/lessons/lesson-02'
 import { useGameStore } from '../store/gameStore'
-import { FAIL_MESSAGE_DELAY_MS, PASS_ADVANCE_MS, VALIDATION_DEBOUNCE_MS, useLessonMachine } from './useLessonMachine'
+import { PASS_ADVANCE_MS, VALIDATION_DEBOUNCE_MS, useLessonMachine } from './useLessonMachine'
 
 vi.mock('../utils/sounds', () => ({ play: vi.fn() }))
 
 const STEP_INDEX = 1 // lesson 1, step 1: "type <html></html>" (10 XP)
-const step = lesson01.steps[STEP_INDEX]
+const editorViewRef = { current: null }
 
-function renderMachine() {
+function renderMachine(lesson = lesson01, stepIndex = STEP_INDEX) {
   return renderHook(() =>
-    useLessonMachine({ lesson: lesson01, step, stepIndex: STEP_INDEX, topic: 'Space', editorViewRef: { current: null } }),
+    useLessonMachine({ lesson, step: lesson.steps[stepIndex], stepIndex, topic: 'Space', editorViewRef }),
   )
 }
+type Machine = ReturnType<typeof renderMachine>['result']
 
-/** Type, then wait long enough for the check and (if wrong) the mistake to be shown. */
-function typeAndPause(result: ReturnType<typeof renderMachine>['result'], code: string) {
+/** Type, then pause long enough for the automatic check. */
+function typeAndPause(result: Machine, code: string) {
   act(() => result.current.onCodeChange(code))
-  act(() => vi.advanceTimersByTime(VALIDATION_DEBOUNCE_MS + FAIL_MESSAGE_DELAY_MS))
+  act(() => vi.advanceTimersByTime(VALIDATION_DEBOUNCE_MS))
+}
+
+/** XP lands a moment after the pass so Byte's jump plays first. */
+const XP_DELAY_MS = 200
+
+/** Type, then press "Check my code". */
+function typeAndCheck(result: Machine, code: string) {
+  act(() => result.current.onCodeChange(code))
+  act(() => result.current.checkNow())
 }
 
 describe('useLessonMachine', () => {
@@ -33,8 +44,9 @@ describe('useLessonMachine', () => {
     typeAndPause(result, '<html></html>')
 
     expect(result.current.phase).toBe('passed')
+    act(() => vi.advanceTimersByTime(XP_DELAY_MS))
     expect(useGameStore.getState().xp).toBe(10)
-    act(() => vi.advanceTimersByTime(PASS_ADVANCE_MS))
+    act(() => vi.advanceTimersByTime(PASS_ADVANCE_MS - XP_DELAY_MS))
     expect(useGameStore.getState().currentStepIndex).toBe(STEP_INDEX + 1)
   })
 
@@ -47,21 +59,35 @@ describe('useLessonMachine', () => {
     expect(useGameStore.getState().currentStepIndex).toBe(STEP_INDEX)
   })
 
-  it('does not flag code the learner is still typing', () => {
+  it('never counts a mistake just because the learner paused to think', () => {
     const { result } = renderMachine()
-    act(() => result.current.onCodeChange('<ht'))
-    act(() => vi.advanceTimersByTime(VALIDATION_DEBOUNCE_MS + 500))
-    act(() => result.current.onCodeChange('<htm')) // typed again before the mistake was shown
-    act(() => vi.advanceTimersByTime(VALIDATION_DEBOUNCE_MS - 1))
+    typeAndPause(result, '<ht')
+    act(() => vi.advanceTimersByTime(30_000))
+    expect(result.current.failCount).toBe(0)
+    expect(result.current.phase).toBe('editing')
+    expect(useGameStore.getState().hearts).toBe(3)
+  })
+
+  it('passes on "Check my code" without waiting for the pause', () => {
+    const { result } = renderMachine()
+    typeAndCheck(result, '<html></html>')
+    expect(result.current.phase).toBe('passed')
+  })
+
+  it('shows warm-up mistakes without counting them', () => {
+    const { result } = renderMachine(lessonTwo, 0)
+    typeAndCheck(result, 'x')
+    expect(result.current.phase).toBe('failed')
     expect(result.current.failCount).toBe(0)
   })
 
   it('gives half XP and records the step for review after a mistake', () => {
     const { result } = renderMachine()
-    typeAndPause(result, '<p>oops')
+    typeAndCheck(result, '<p>oops')
     expect(result.current.failCount).toBe(1)
 
     typeAndPause(result, '<html></html>')
+    act(() => vi.advanceTimersByTime(XP_DELAY_MS))
     expect(useGameStore.getState().xp).toBe(5)
     expect(useGameStore.getState().mistakeLog['lesson-01']).toEqual([
       expect.objectContaining({ stepId: 'step-1', failCount: 1 }),
@@ -70,10 +96,10 @@ describe('useLessonMachine', () => {
 
   it('costs a heart on the third mistake', () => {
     const { result } = renderMachine()
-    typeAndPause(result, '<p>1')
-    typeAndPause(result, '<p>2')
+    typeAndCheck(result, '<p>1')
+    typeAndCheck(result, '<p>2')
     expect(useGameStore.getState().hearts).toBe(3)
-    typeAndPause(result, '<p>3')
+    typeAndCheck(result, '<p>3')
     expect(useGameStore.getState().hearts).toBe(2)
   })
 })

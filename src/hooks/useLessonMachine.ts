@@ -7,10 +7,12 @@ import { validate } from '../utils/validator'
 import { play } from '../utils/sounds'
 import { useTimers } from './useTimers'
 
-/** Pause after the last keystroke before the code is checked. */
+/**
+ * Pause after the last keystroke before the code is checked automatically.
+ * The automatic check can only PASS a step: pausing to think is never
+ * counted as a mistake. Mistakes only come from pressing "Check my code".
+ */
 export const VALIDATION_DEBOUNCE_MS = 1_500
-/** Extra pause before a wrong answer is shown, so mid-typing states are never flagged. */
-export const FAIL_MESSAGE_DELAY_MS = 1_000
 /** How long the pass celebration plays before the next step loads. */
 export const PASS_ADVANCE_MS = 1_500
 const TYPING_WINDOW_MS = 2_000
@@ -163,13 +165,12 @@ export function useLessonMachine({ lesson, step, stepIndex, topic, editorViewRef
     timers.schedule('advance', advanceStep, PASS_ADVANCE_MS)
   }, [lesson, step, resolve, timers])
 
+  // Only reached from an explicit "Check my code".
   const handleFail = useCallback(() => {
     const { loseHeart, setMascotMood, hearts } = useGameStore.getState()
     const isWarmup = step.type === 'warmup'
-    if (isWarmup) return // warm-ups never show failure or cost anything
-
-    const failCountAfter = attemptRef.current.failCount + 1
-    dispatch({ type: 'CHECKED', result: 'fail', countsAsMistake: true })
+    const failCountAfter = attemptRef.current.failCount + (isWarmup ? 0 : 1)
+    dispatch({ type: 'CHECKED', result: 'fail', countsAsMistake: !isWarmup })
 
     play('wrong')
     setPreviewFlash('fail')
@@ -177,9 +178,18 @@ export function useLessonMachine({ lesson, step, stepIndex, topic, editorViewRef
     timers.schedule('justFailed', () => setJustFailed(false), 1000)
     timers.schedule('flash', () => setPreviewFlash('idle'), 2200)
 
-    if (costsHeart(failCountAfter) && hearts > 0) loseHeart()
-    else setMascotMood('think', 'Not quite! Check the hint if you need help.')
+    if (isWarmup) setMascotMood('think', 'Not quite yet. Keep going! Warm-ups never cost hearts.')
+    else if (costsHeart(failCountAfter) && hearts > 0) loseHeart()
+    else setMascotMood('think', 'Not quite! Open the hint if you need help.')
   }, [step, timers])
+
+  /** "Check my code": pass, or show and count the mistake. */
+  const checkNow = useCallback(() => {
+    if (attemptRef.current.phase === 'passed') return
+    timers.cancel('check')
+    if (validate(step, lastCodeRef.current, topic) === 'pass') handlePass()
+    else handleFail()
+  }, [step, topic, timers, handlePass, handleFail])
 
   const onCodeChange = useCallback(
     (code: string) => {
@@ -189,7 +199,6 @@ export function useLessonMachine({ lesson, step, stepIndex, topic, editorViewRef
       lastCodeRef.current = code
 
       timers.cancel('check')
-      timers.cancel('showFail')
       if (attemptRef.current.phase === 'failed') setMascotMood('idle', '')
       dispatch({ type: 'EDITED' })
 
@@ -205,18 +214,16 @@ export function useLessonMachine({ lesson, step, stepIndex, topic, editorViewRef
         STUCK_THRESHOLD_MS,
       )
 
+      // Automatic check on pause: celebrate a correct answer, stay quiet otherwise.
       timers.schedule(
         'check',
         () => {
-          const snapshot = lastCodeRef.current
-          if (validate(step, snapshot, topic) === 'pass') return handlePass()
-          // Only show (and count) a mistake if they are still paused on the same code.
-          timers.schedule('showFail', () => lastCodeRef.current === snapshot && handleFail(), FAIL_MESSAGE_DELAY_MS)
+          if (validate(step, lastCodeRef.current, topic) === 'pass') handlePass()
         },
         VALIDATION_DEBOUNCE_MS,
       )
     },
-    [step, topic, timers, handlePass, handleFail],
+    [step, topic, timers, handlePass],
   )
 
   return {
@@ -230,5 +237,6 @@ export function useLessonMachine({ lesson, step, stepIndex, topic, editorViewRef
     previewGlow,
     showHighlight,
     onCodeChange,
+    checkNow,
   }
 }
