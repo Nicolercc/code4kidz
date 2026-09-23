@@ -1,0 +1,6 @@
+- button "Press space or tap to continue":
+  - text: Press space to continue
+  - img "Byte is idle"
+  - paragraph: HI! I'M BYTE.
+  - paragraph: YOUR ROBOT CODING BUDDY 🤖
+  - text: Tap to continue

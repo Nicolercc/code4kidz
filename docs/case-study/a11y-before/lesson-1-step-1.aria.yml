@@ -1,0 +1,10 @@
+- button "✕ Exit"
+- button "Unmute": 🔇
+- text: ❤️ ❤️ ❤️ ⚡ 0 XP Step 1 of 5
+- img "Byte is story"
+- text: Byte's Story This one tag — html — is the very first thing on EVERY website. YouTube starts with it. Roblox starts with it. Now your Space page does too.
+- paragraph: YOUR MISSION
+- text: "Every webpage on the internet starts with a container. Type this exactly: <html></html> This tells the browser: \"A webpage lives here.\" When you type it correctly, you will move to the next step! index.html"
+- textbox
+- text: ✕ Keep trying... Live Preview
+- iframe

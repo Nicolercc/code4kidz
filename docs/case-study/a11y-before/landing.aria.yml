@@ -1,0 +1,50 @@
+- navigation:
+  - text: 🌱 Code4Kidz
+  - button "🏠 Home"
+  - button "📖 Learn"
+  - button "🎓 Classroom"
+  - button "🚀 Start Learning Free"
+- text: ✦ ✦ ✦ ✨ ✨ ✨ ✨ 🎮 Gamified Coding for Ages 7–10
+- heading "Learn to Code." [level=1]
+- heading "Level Up. Have Fun!" [level=1]
+- paragraph: Real HTML and CSS. Free forever. No account needed.
+- button "🚀 Start Learning Free!"
+- button "Facilitator? Learn more →"
+- text: Free Forever Ages 7–10 Real HTML & CSS +100 XP! 🌟 ❤️ ×5 Boop boop. Nice to meet you!
+- img "Byte is idle"
+- heading "Why Kids Love Code4Kidz" [level=2]
+- paragraph: We made coding feel like the best game you've ever played — because learning should be an adventure!
+- text: 🖥️
+- heading "Live Code Editor" [level=3]
+- text: 🏆
+- heading "Earn XP & Level Up" [level=3]
+- text: ❤️
+- heading "Hearts System" [level=3]
+- text: 🔥
+- heading "Daily Streaks" [level=3]
+- text: 👥
+- heading "Classroom Mode" [level=3]
+- text: 🔒
+- heading "Kid-Safe Platform" [level=3]
+- heading "Your Learning Path 🗺️" [level=2]
+- paragraph: Complete lessons in order to unlock new adventures!
+- text: ✓ 👋 Lesson 1 Hello, World! +100 XP ✓ 👋 Lesson 2 Making Headings +120 XP 🎨 Lesson 3 Adding Colors +150 XP 🔒 🔒 🔒
+- button "▶ Continue Lesson 3"
+- text: ✦ ✦ ✦ ✨ ✨ ✨ ✨
+- heading "Watch Byte Evolve! 🤖✨" [level=2]
+- paragraph: As you earn XP and complete lessons, your robot buddy Byte transforms from a rusty little bot into a full-on superhero with a cape and visor!
+- button "See Byte's Evolution →"
+- img "Byte is idle"
+- text: Lv.1
+- img "Byte is idle"
+- text: Lv.2
+- img "Byte is idle"
+- text: Lv.3
+- img "Byte is cheer": ★ ★ ★ ★ ★
+- text: Lv.5 ✦ ✦ ✦ ✨ ✨ ✨ ✨
+- heading "Ready to Start Your Coding Adventure? 🚀" [level=2]
+- paragraph: Join 50,000+ kids already building amazing things with code!
+- button "🎮 Play & Learn Now — It's Free!"
+- contentinfo:
+  - text: 🌱 Code4Kidz
+  - paragraph: Making coding magical for kids ages 7–10 · Built with ❤️

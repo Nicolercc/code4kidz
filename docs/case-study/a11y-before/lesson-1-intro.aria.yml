@@ -1,0 +1,11 @@
+- button "Press space or tap to continue":
+  - text: Press space to continue
+  - button "Go back to previous screen": ← Back
+  - img "Byte is idle"
+  - text: Lesson 1 Say Hello to the Web! Press space to continue Hey! I am Byte — your robot coding buddy! Today you are going to build your FIRST ever webpage — about Space! Millions of people will be able to see what you make. Let us start RIGHT NOW. Tap to continue
+- button "✕ Exit"
+- button "Unmute": 🔇
+- text: ❤️ ❤️ ❤️ ⚡ 0 XP index.html
+- textbox
+- text: ✕ Keep trying... Live Preview
+- iframe

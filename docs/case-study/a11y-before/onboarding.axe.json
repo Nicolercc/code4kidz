@@ -1,0 +1,29 @@
+[
+  {
+    "id": "landmark-one-main",
+    "impact": "moderate",
+    "help": "Document should have one main landmark",
+    "nodes": 1,
+    "examples": [
+      "html"
+    ]
+  },
+  {
+    "id": "meta-viewport",
+    "impact": "moderate",
+    "help": "Zooming and scaling must not be disabled",
+    "nodes": 1,
+    "examples": [
+      "meta[name=\"viewport\"]"
+    ]
+  },
+  {
+    "id": "page-has-heading-one",
+    "impact": "moderate",
+    "help": "Page should contain a level-one heading",
+    "nodes": 1,
+    "examples": [
+      "html"
+    ]
+  }
+]

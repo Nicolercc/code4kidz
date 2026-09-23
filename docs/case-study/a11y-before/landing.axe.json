@@ -1,0 +1,42 @@
+[
+  {
+    "id": "color-contrast",
+    "impact": "serious",
+    "help": "Elements must meet minimum color contrast ratio thresholds",
+    "nodes": 4,
+    "examples": [
+      ".group.relative:nth-child(3) > .hover\\:bg-gray-100.transition-colors.py-2",
+      ".shadow-\\[0_4px_0_\\#A84310\\]",
+      ".py-3\\.5"
+    ]
+  },
+  {
+    "id": "landmark-one-main",
+    "impact": "moderate",
+    "help": "Document should have one main landmark",
+    "nodes": 1,
+    "examples": [
+      "html"
+    ]
+  },
+  {
+    "id": "meta-viewport",
+    "impact": "moderate",
+    "help": "Zooming and scaling must not be disabled",
+    "nodes": 1,
+    "examples": [
+      "meta[name=\"viewport\"]"
+    ]
+  },
+  {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "nodes": 21,
+    "examples": [
+      ".from-\\[\\#2A0B6B\\] > .inset-0.pointer-events-none.overflow-hidden",
+      ".inline-flex",
+      "h1:nth-child(2)"
+    ]
+  }
+]

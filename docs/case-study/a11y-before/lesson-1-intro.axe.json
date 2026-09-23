@@ -1,0 +1,40 @@
+[
+  {
+    "id": "aria-input-field-name",
+    "impact": "serious",
+    "help": "ARIA input fields must have an accessible name",
+    "nodes": 1,
+    "examples": [
+      ".cm-content"
+    ]
+  },
+  {
+    "id": "meta-viewport",
+    "impact": "moderate",
+    "help": "Zooming and scaling must not be disabled",
+    "nodes": 1,
+    "examples": [
+      "meta[name=\"viewport\"]"
+    ]
+  },
+  {
+    "id": "nested-interactive",
+    "impact": "serious",
+    "help": "Interactive controls must not be nested",
+    "nodes": 1,
+    "examples": [
+      "div[role=\"button\"]"
+    ]
+  },
+  {
+    "id": "region",
+    "impact": "moderate",
+    "help": "All page content should be contained by landmarks",
+    "nodes": 6,
+    "examples": [
+      ".bg-white\\/50",
+      ".bg-brand-orangeL",
+      ".h-14"
+    ]
+  }
+]

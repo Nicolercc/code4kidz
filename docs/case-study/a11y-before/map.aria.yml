@@ -1,0 +1,31 @@
+- banner: Code4Kidz 🔥 1 ⭐ 0 XP
+- paragraph: Your Coding Journey
+- paragraph: Space skill tree
+- text: Thu Fri Sat Sun Mon Tue Wed
+- main:
+  - link "👋":
+    - /url: /lesson/1
+  - text: Say Hello to the Web! TAP!
+  - link "🔤":
+    - /url: /lesson/2
+  - text: Make a Big Title!
+  - button "Write Your Story. Coming soon." [disabled]: 📝
+  - text: Write Your Story
+  - button "Paint With Colors!. Coming soon." [disabled]: 🎨
+  - text: Paint With Colors!
+  - button "Make a List of Things. Coming soon." [disabled]: 📋
+  - text: Make a List of Things
+  - button "Add a Picture!. Coming soon." [disabled]: 🖼️
+  - text: Add a Picture!
+  - button "Build a Button!. Coming soon." [disabled]: 🔒
+  - text: Build a Button! Make it clickable + stylish.
+  - button "Layout Like a Pro. Coming soon." [disabled]: 🔒
+  - text: Layout Like a Pro Flexbox makes magic rows.
+  - button "Animate Your Page. Coming soon." [disabled]: 🔒
+  - text: Animate Your Page Tiny motion that feels alive.
+  - button "Make a Mini Game!. Coming soon." [disabled]: 🔒
+  - text: Make a Mini Game! Score points with JS.
+  - img "Level 2. JavaScript — Coming Soon.": ★
+  - text: Level 2 JavaScript — Coming Soon
+  - paragraph: Tap a node to start a lesson
+- text: Nice work! Tap the next glowing node to keep going.
