@@ -73,6 +73,16 @@ describe('LessonPage accessibility', () => {
     expect(screen.getByRole('status').textContent).toMatch(/not quite/i)
   })
 
+  it('reads Byte\'s message once (status), not twice (status and bubble)', () => {
+    renderLesson()
+    continuePastIntro()
+    act(() => vi.advanceTimersByTime(1000))
+    const message = useGameStore.getState().byteMessage
+    expect(message).not.toBe('')
+    const exposed = screen.getAllByText((_, el) => el?.textContent === message && !el.closest('[aria-hidden="true"]'))
+    expect(exposed.every((el) => el.closest('[role="status"]'))).toBe(true)
+  })
+
   it('keeps the status channel outside the panels that phones hide', () => {
     renderLesson()
     continuePastIntro()

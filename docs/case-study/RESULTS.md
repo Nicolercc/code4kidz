@@ -95,7 +95,7 @@ overflow at 375, 768 or 1280px ([after](responsive/after-phone.png)). A full les
 
 | | Before | After |
 |---|---|---|
-| Unit / component tests | 0 | 196 |
+| Unit / component tests | 0 | 197 |
 | End-to-end + axe (desktop and phone) | 0 | 12 |
 | Lint (react-hooks rules) | not configured, 39 errors when added | 0 errors |
 | CI | none | typecheck, lint, tests, build, e2e on every push and PR |

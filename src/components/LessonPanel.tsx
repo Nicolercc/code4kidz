@@ -76,7 +76,8 @@ export default function LessonPanel({
           </AnimatePresence>
         </div>
 
-        <div className="flex-1 min-w-0">
+        {/* Visual copy only: the page's role="status" carries the same text for screen readers. */}
+        <div className="flex-1 min-w-0" aria-hidden="true">
           <ByteTypewriter text={byteMessage} mood={btMood} compact />
         </div>
       </div>

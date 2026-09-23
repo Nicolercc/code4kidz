@@ -6,7 +6,7 @@
   - 'heading "Lesson 1: Say Hello to the Web! — Step 1 of 5" [level=1]'
   - status: Not quite! Open the hint if you need help.
   - region "Instructions":
-    - text: Step 1 of 5 Not quite! Open the hint if you need help.
+    - text: Step 1 of 5
     - paragraph: YOUR MISSION
     - text: "Every webpage on the internet starts with a container. Type this exactly: <html></html> This tells the browser: \"A webpage lives here.\" When you type it correctly, you will move to the next step!"
     - button "Need a hint?"
