@@ -61,7 +61,7 @@ export default function XPCounter() {
 
   return (
     <motion.div
-      className="relative flex items-center gap-2 bg-brand-orangeL text-[#9A3D0E] font-bold px-3 py-1.5 rounded-full border-2 border-brand-orange/20"
+      className="relative flex items-center gap-2 bg-brand-orangeL text-[#9A3D0E] font-bold px-2 md:px-3 py-1.5 rounded-full border-2 border-brand-orange/20 whitespace-nowrap"
       animate={isGlowing ? {
         boxShadow: '0 0 14px rgba(212,88,26,0.65)',
         scale: [1, 1.2, 1],
@@ -70,8 +70,8 @@ export default function XPCounter() {
       }}
       transition={{ duration: 0.3, times: [0, 0.5, 1] }}
     >
-      <span className="text-xl" aria-hidden="true">⚡</span>
-      <span className="text-lg">{displayXp} XP</span>
+      <span className="text-base md:text-xl" aria-hidden="true">⚡</span>
+      <span className="text-sm md:text-lg">{displayXp} XP</span>
 
       <AnimatePresence>
         {pop && (

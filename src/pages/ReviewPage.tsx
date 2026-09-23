@@ -22,7 +22,7 @@ export default function ReviewPage() {
 
 function ReviewScreen({ lesson, id, topicName }: { lesson: Lesson; id: string; topicName: string }) {
   const navigate = useNavigate();
-  const { mistakeLog, gainXP, setMascotMood, clearMistakeLog } = useGameStore();
+  const { mistakeLog, byteMessage, gainXP, setMascotMood, clearMistakeLog } = useGameStore();
   const [reviewIndex, setReviewIndex] = useState(0);
   const [code, setCode] = useState('');
   const [validationState, setValidationState] = useState<'idle' | 'pass' | 'fail'>('idle');
@@ -86,49 +86,58 @@ function ReviewScreen({ lesson, id, topicName }: { lesson: Lesson; id: string; t
   if (mistakes.length === 0) return <Navigate to={`/complete/${id}`} replace />;
   if (!step) return null;
 
+  const reviewLabel = `Review ${Math.min(reviewIndex + 1, totalReviewSteps)} of ${totalReviewSteps}`;
+
   return (
-    <div className="h-dvh w-full flex overflow-hidden bg-brand-bg relative">
-      <FlowBackButton style={{ top: 56 }} />
-      <div className="absolute top-4 right-4 z-50">
+    // Phones stack the three panels and scroll; md and up keeps three columns.
+    <div className="h-dvh w-full flex flex-col overflow-y-auto md:overflow-hidden bg-brand-bg">
+      <header className="relative z-50 flex items-center justify-between gap-2 px-3 py-2 bg-brand-green text-white">
+        <FlowBackButton style={{ position: 'static' }} />
+        <p className="font-black tracking-widest uppercase text-sm md:text-base text-center">
+          {reviewLabel} <span aria-hidden="true">•</span> Practice makes perfect
+        </p>
         <XPCounter />
-      </div>
+      </header>
 
-      {/* Review Banner */}
-      <div className="absolute top-0 left-0 right-0 h-12 bg-brand-green text-white flex items-center justify-center font-black tracking-widest uppercase z-50">
-        REVIEW {Math.min(reviewIndex + 1, totalReviewSteps)} OF {totalReviewSteps} • PRACTICE MAKES PERFECT
-      </div>
+      <main className="flex-1 md:min-h-0 flex flex-col md:flex-row" aria-labelledby="review-heading">
+        <h1 id="review-heading" className="sr-only">
+          Lesson {lesson.lessonNumber} review — {reviewLabel}
+        </h1>
+        <p role="status" aria-atomic="true" className="sr-only">
+          {validationState === 'pass' ? 'Correct! Locked in.' : byteMessage}
+        </p>
 
-      {/* Panel 1 */}
-      <div className="w-1/3 h-full bg-brand-greenL border-r border-brand-green/20 relative z-10 pt-16">
-        <LessonPanel
-          instruction={resolve(step.instruction)}
-          hint={resolve(step.hint)}
-          totalSteps={mistakes.length}
-          // Bugfix: hide the main lesson step counter (it reads from store and can show impossible counts).
-          isWarmup
-        />
-      </div>
+        <section aria-label="Instructions" className="md:w-1/3 md:h-full bg-brand-greenL border-r border-brand-green/20">
+          <LessonPanel
+            instruction={resolve(step.instruction)}
+            hint={resolve(step.hint)}
+            totalSteps={mistakes.length}
+            // The lesson step counter reads the store and would show the wrong step here.
+            isWarmup
+          />
+        </section>
 
-      {/* Panel 2: Editor */}
-      <div className="w-1/3 h-full bg-[#1A1A2E] flex flex-col relative z-20 pt-12 shadow-2xl">
-        <div className="flex-1 relative overflow-hidden">
-          <Editor value={code} onChange={handleCodeChange} />
+        <section aria-label="Code editor" className="on-dark md:w-1/3 min-h-[45vh] md:h-full bg-[#1A1A2E] flex flex-col shadow-2xl">
+          <div className="flex-1 relative overflow-hidden">
+            <Editor value={code} onChange={handleCodeChange} />
 
-          <div className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-300 ${
-            validationState === 'pass' ? 'translate-y-0 bg-brand-green text-white' :
-            'translate-y-full bg-transparent'
-          }`}>
-            <div className="font-bold text-lg flex items-center gap-2">✓ Locked in!</div>
+            <div
+              aria-hidden="true"
+              className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-300 ${
+                validationState === 'pass' ? 'translate-y-0 bg-brand-green text-white' : 'translate-y-full bg-transparent'
+              }`}
+            >
+              <div className="font-bold text-lg flex items-center gap-2">{validationState === 'pass' ? '✓ Locked in!' : null}</div>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Panel 3: Preview */}
-      <div className="w-1/3 h-full bg-brand-bg p-4 flex flex-col relative z-10 pt-16">
-        <div className="flex-1 rounded-xl overflow-hidden shadow-lg border-4 border-white">
-          <Preview code={code} />
-        </div>
-      </div>
+        <section aria-label="Live preview" className="md:w-1/3 min-h-[45vh] md:h-full bg-brand-bg p-4 flex flex-col">
+          <div className="flex-1 rounded-xl overflow-hidden shadow-lg border-4 border-white">
+            <Preview code={code} />
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

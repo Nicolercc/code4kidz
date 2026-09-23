@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Byte from './Byte';
 import ByteTypewriter from './ByteTypewriter';
-import FlowBackButton from './FlowBackButton';
 
 interface WarmUpStepProps {
   bytePrompt: string;
@@ -28,8 +27,7 @@ export default function WarmUpStep({ bytePrompt, instruction, lessonNumber }: Wa
   const strokeDash = (timeLeft / 60) * circumference;
 
   return (
-    <div className="relative flex flex-col h-full pt-14 px-6 pb-6 gap-6 overflow-y-auto">
-      <FlowBackButton />
+    <div className="relative flex flex-col h-full pt-4 md:pt-0 px-6 pb-6 gap-6 overflow-y-auto">
       {/* Warm-up Badge */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}

@@ -28,7 +28,7 @@ export default function HeartBar() {
         key={shakeRef.current}
         animate={hearts < prevHearts ? { x: [0, -6, 6, -4, 4, -2, 2, 0] } : { x: 0 }}
         transition={{ duration: 0.5, ease: 'easeInOut' }}
-        className="flex items-center gap-2 bg-white/50 backdrop-blur-sm px-3 py-1.5 rounded-full border border-brand-border"
+        className="flex items-center gap-1 md:gap-2 bg-white/50 backdrop-blur-sm px-2 md:px-3 py-1.5 rounded-full border border-brand-border"
       >
         {/* The emoji row is decorative; this sentence is what assistive tech reads. */}
         <span className="sr-only">{hearts} of 3 hearts left</span>
@@ -43,7 +43,7 @@ export default function HeartBar() {
                   : { scale: 1, opacity: 1 }
                 }
                 transition={{ type: 'spring', bounce: 0.5 }}
-                className="text-2xl"
+                className="text-lg md:text-2xl"
               >
                 {isLost ? '💔' : '❤️'}
               </motion.div>

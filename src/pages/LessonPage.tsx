@@ -19,6 +19,13 @@ import { useTapGate } from '../hooks/useTapGate';
 import { useTimers } from '../hooks/useTimers';
 import { useLessonMachine } from '../hooks/useLessonMachine';
 
+type MobileView = 'instructions' | 'code' | 'preview';
+const MOBILE_VIEWS: { view: MobileView; label: string }[] = [
+  { view: 'instructions', label: 'Instructions' },
+  { view: 'code', label: 'Code' },
+  { view: 'preview', label: 'Preview' },
+];
+
 export default function LessonPage() {
   const { id } = useParams();
   const lesson = getLesson(id);
@@ -105,6 +112,14 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
     return () => timers.cancel('splashAuto');
   }, [splashActive, introIsShort, handleSplashContinue, timers]);
 
+  // Below the md breakpoint only one panel fits; each new step starts on Instructions.
+  const [mobileView, setMobileView] = useState<MobileView>('instructions');
+  useEffect(() => setMobileView('instructions'), [currentStepIndex]);
+  const panelVisibility = (view: MobileView) => (mobileView === view ? 'flex' : 'hidden') + ' md:flex';
+
+  const mascotMood = useGameStore((s) => s.mascotMood);
+  const byteMessage = useGameStore((s) => s.byteMessage);
+
   const stepCount = lesson.steps.length - 1;
   const stepLabel = currentStepIndex === 0 ? (isLesson1Warmup ? 'Intro' : 'Warm-up') : `Step ${currentStepIndex} of ${stepCount}`;
 
@@ -114,7 +129,7 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
     'border-4 border-white';
 
   return (
-    <div className="h-dvh w-full flex overflow-hidden bg-brand-bg" style={{ position: 'relative' }}>
+    <div className="h-dvh w-full flex flex-col overflow-hidden bg-brand-bg" style={{ position: 'relative' }}>
 
       {/* Lesson 1 intro. Tap anywhere, or use the focused Continue button. */}
       <AnimatePresence>
@@ -164,8 +179,12 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
       </AnimatePresence>
 
       {/* Hidden from assistive tech (and unfocusable) while the intro covers it. */}
-      <header inert={splashActive}>
-        <div className="absolute top-4 left-4 z-50">
+      {/* A normal row on phones; floats over the panels' top padding from md up. */}
+      <header
+        inert={splashActive}
+        className="relative z-50 flex items-center justify-between gap-2 px-3 py-2 md:absolute md:inset-x-0 md:top-0 md:p-4 md:pointer-events-none"
+      >
+        <div className="md:pointer-events-auto">
           <button
             type="button"
             onClick={() => navigate('/map')}
@@ -175,7 +194,7 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
             <span aria-hidden="true">✕</span> Exit
           </button>
         </div>
-        <div className="absolute top-4 right-4 z-50 flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3 md:pointer-events-auto">
           <button
             type="button"
             onClick={toggleMute}
@@ -190,12 +209,34 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
         </div>
       </header>
 
-      <main className="flex flex-1 h-full w-full" aria-labelledby="lesson-heading" inert={splashActive}>
+      <nav aria-label="Lesson panels" inert={splashActive} className="md:hidden flex gap-1 px-3 pb-2">
+        {MOBILE_VIEWS.map(({ view, label }) => (
+          <button
+            key={view}
+            type="button"
+            aria-pressed={mobileView === view}
+            onClick={() => setMobileView(view)}
+            className={`flex-1 rounded-full py-2 text-sm font-bold border-2 ${
+              mobileView === view ? 'bg-brand-purple text-white border-brand-purple' : 'bg-white text-brand-purple border-[#D4CFF5]'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      <main className="flex-1 min-h-0 flex flex-col md:flex-row w-full" aria-labelledby="lesson-heading" inert={splashActive}>
         <h1 id="lesson-heading" className="sr-only">
           Lesson {lesson.lessonNumber}: {lesson.title} — {stepLabel}
         </h1>
+        {/* Always present (panels can be hidden on phones), so screen readers hear
+            every message from Byte. The green "cheer" bubble means a step passed. */}
+        <p role="status" aria-atomic="true" className="sr-only">
+          {mascotMood === 'cheer' && byteMessage ? 'Correct! ' : ''}{byteMessage}
+        </p>
 
-        <section aria-label="Instructions" className="w-1/3 h-full relative z-10 pt-16" style={{ background: 'linear-gradient(180deg, #EDE9FB 0%, #E8E3F8 100%)', borderRight: '1px solid #D4CFF5' }}>
+        <section aria-label="Instructions" className={`${panelVisibility('instructions')} flex-col flex-1 min-h-0 md:flex-none md:w-1/3 md:h-full relative z-10 md:pt-16`} style={{ background: 'linear-gradient(180deg, #EDE9FB 0%, #E8E3F8 100%)', borderRight: '1px solid #D4CFF5' }}>
+          <div className="flex-1 min-h-0">
           {step.type === 'warmup' && step.xp > 0 ? (
             <WarmUpStep
               bytePrompt={resolve(step.bytePrompt)}
@@ -214,9 +255,19 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
               isStuck={isStuck}
               />
           )}
+          </div>
+          <div className="md:hidden p-3 border-t border-[#D4CFF5]">
+            <button
+              type="button"
+              onClick={() => setMobileView('code')}
+              className="w-full rounded-full bg-brand-purple text-white font-bold py-3"
+            >
+              Start coding <span aria-hidden="true">→</span>
+            </button>
+          </div>
         </section>
 
-        <section aria-label="Code editor" className="on-dark w-1/3 h-full bg-[#1A1A2E] flex flex-col relative z-20 shadow-2xl">
+        <section aria-label="Code editor" className={`on-dark ${panelVisibility('code')} flex-col flex-1 min-h-0 md:flex-none md:w-1/3 md:h-full bg-[#1A1A2E] relative z-20 shadow-2xl`}>
           <div className="h-14 bg-[#111122] flex items-center justify-between gap-3 px-4 border-b border-[#333]">
             <div className="text-[#A9A9B8] font-mono text-sm" aria-hidden="true">index.html</div>
             {!isLesson1Warmup && (
@@ -257,7 +308,7 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
           </div>
         </section>
 
-        <section aria-label="Live preview" className="w-1/3 h-full bg-brand-bg p-4 flex flex-col relative z-10 pt-16">
+        <section aria-label="Live preview" className={`${panelVisibility('preview')} flex-col flex-1 min-h-0 md:flex-none md:w-1/3 md:h-full bg-brand-bg p-4 relative z-10 md:pt-16`}>
           <div className="mb-2 text-brand-muted font-bold text-sm uppercase tracking-wider pl-2" aria-hidden="true">
             Live Preview
           </div>

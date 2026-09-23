@@ -77,7 +77,7 @@ export default function LessonPanel({
         </div>
 
         <div className="flex-1 min-w-0">
-          <ByteTypewriter text={byteMessage} mood={btMood} compact live />
+          <ByteTypewriter text={byteMessage} mood={btMood} compact />
         </div>
       </div>
 

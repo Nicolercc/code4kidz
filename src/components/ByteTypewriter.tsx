@@ -13,20 +13,14 @@ export interface ByteTypewriterProps {
   mood: BubbleMood;
   /** Tighter typography for side panels (e.g. lesson) so content fits without scrolling. */
   compact?: boolean;
-  /**
-   * Make this bubble the screen's status channel: screen readers announce each
-   * new message politely. Use for at most one bubble per screen.
-   */
-  live?: boolean;
 }
 
 /** Byte's speech bubble. Colour and border signal the mood; the text carries the meaning. */
-export default function ByteTypewriter({ text, mood, compact = false, live = false }: ByteTypewriterProps) {
+export default function ByteTypewriter({ text, mood, compact = false }: ByteTypewriterProps) {
   const b = BUBBLE_STYLE[mood];
 
   return (
     <div
-      {...(live ? { role: 'status', 'aria-atomic': true } : {})}
       style={{
         background: b.bg,
         borderLeft: `${b.borderW} solid ${b.borderColor}`,
@@ -54,8 +48,6 @@ export default function ByteTypewriter({ text, mood, compact = false, live = fal
           Byte&apos;s Story
         </span>
       )}
-      {/* The green "cheer" bubble means a step just passed; say so in words too. */}
-      {live && mood === 'cheer' && text && <span className="sr-only">Correct! </span>}
       <span style={{ whiteSpace: 'pre-wrap' }}>{text}</span>
     </div>
   );

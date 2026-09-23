@@ -73,6 +73,23 @@ describe('LessonPage accessibility', () => {
     expect(screen.getByRole('status').textContent).toMatch(/not quite/i)
   })
 
+  it('keeps the status channel outside the panels that phones hide', () => {
+    renderLesson()
+    continuePastIntro()
+    expect(screen.getByRole('status').closest('section')).toBeNull()
+  })
+
+  it('has a phone view switcher that reports which panel is showing', () => {
+    renderLesson()
+    continuePastIntro()
+    const switcher = screen.getByRole('navigation', { name: 'Lesson panels' })
+    const code = within(switcher).getByRole('button', { name: 'Code' })
+    expect(code.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(code)
+    expect(code.getAttribute('aria-pressed')).toBe('true')
+    expect(within(switcher).getByRole('button', { name: 'Instructions' }).getAttribute('aria-pressed')).toBe('false')
+  })
+
   it('tells screen reader users how many hearts are left', () => {
     renderLesson()
     continuePastIntro()
