@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useGameStore } from '../store/gameStore';
-import { lesson01 } from '../data/lessons/lesson-01';
+import { lesson01, type Lesson } from '../data/lessons/lesson-01';
 import { lesson02 } from '../data/lessons/lesson-02';
 import { lesson03 } from '../data/lessons/lesson-03';
 import { lesson04 } from '../data/lessons/lesson-04';
@@ -25,11 +25,17 @@ const lessons = {
 
 export default function CompletePage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const lesson = lessons[id as keyof typeof lessons];
+  const topicName = useGameStore((s) => s.topicName);
+
+  if (!lesson || !topicName) return <Navigate to="/map" replace />;
+  return <CompleteScreen key={lesson.id} lesson={lesson} topicName={topicName} />;
+}
+
+function CompleteScreen({ lesson, topicName }: { lesson: Lesson; topicName: string }) {
+  const navigate = useNavigate();
   
-  const { 
-    topicName, 
+  const {
     xp,
     gainXP, 
     markLessonComplete, 
@@ -38,8 +44,6 @@ export default function CompletePage() {
     completedLessons,
     clearMistakeLog
   } = useGameStore();
-
-  if (!lesson || !topicName) return <Navigate to="/map" replace />;
 
   const resolve = (field: string | ((t: string) => string) | undefined): string => {
     if (!field) return '';

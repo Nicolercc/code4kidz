@@ -198,7 +198,7 @@ export const useGameStore = create<GameState>()(
     {
       name: 'code4kidz-store',
       partialize: (s) => {
-        const { hasEditedCurrentStep, mistakeLog, ...rest } = s
+        const { hasEditedCurrentStep: _hasEdited, mistakeLog: _mistakeLog, ...rest } = s
         return rest
       }
     }

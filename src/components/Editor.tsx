@@ -20,6 +20,15 @@ export default function Editor({ value, onChange, onEditorReady, showHighlight }
   // Without this flag, setting startingCode via the value prop fires onChange,
   // which would let editRequired combine steps auto-pass before the kid types anything.
   const isProgrammaticRef = useRef(false);
+  // CodeMirror is created once, so its listener must read the latest callbacks
+  // through refs. Capturing the props directly would pin the first render's
+  // onChange forever (stale step, failCount and XP in LessonPage).
+  const onChangeRef = useRef(onChange);
+  const onEditorReadyRef = useRef(onEditorReady);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onEditorReadyRef.current = onEditorReady;
+  });
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -58,7 +67,7 @@ export default function Editor({ value, onChange, onEditorReady, showHighlight }
         EditorView.updateListener.of((update) => {
           // FIX 3: skip onChange when the update was triggered programmatically
           if (update.docChanged && !isProgrammaticRef.current) {
-            onChange(update.state.doc.toString());
+            onChangeRef.current(update.state.doc.toString());
           }
           // Always reset the flag after processing
           if (update.docChanged) {
@@ -74,11 +83,13 @@ export default function Editor({ value, onChange, onEditorReady, showHighlight }
     });
 
     viewRef.current = view;
-    onEditorReady?.(view);
+    onEditorReadyRef.current?.(view);
 
     return () => {
       view.destroy();
     };
+    // Mount once; `value` seeds the doc and later values sync via the effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

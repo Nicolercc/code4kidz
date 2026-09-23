@@ -13,7 +13,9 @@ interface WarmUpStepProps {
   lessonNumber: number;
 }
 
-export default function WarmUpStep({ bytePrompt, instruction, onComplete, lessonNumber }: WarmUpStepProps) {
+// `onComplete` is accepted but not called yet: warm-ups currently advance on any
+// editor keystroke (see utils/validator.ts). Fixed in the validator work.
+export default function WarmUpStep({ bytePrompt, instruction, lessonNumber }: WarmUpStepProps) {
   const [timeLeft, setTimeLeft] = useState(60);
 
   useEffect(() => {

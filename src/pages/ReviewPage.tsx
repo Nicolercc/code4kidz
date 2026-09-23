@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, type RefObject } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
-import { lesson01 } from '../data/lessons/lesson-01';
+import { lesson01, type Lesson } from '../data/lessons/lesson-01';
 import { lesson02 } from '../data/lessons/lesson-02';
 import { lesson03 } from '../data/lessons/lesson-03';
 import { lesson04 } from '../data/lessons/lesson-04';
@@ -27,10 +27,16 @@ const lessons = {
 
 export default function ReviewPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const lesson = lessons[id as keyof typeof lessons];
+  const topicName = useGameStore((s) => s.topicName);
 
-  const { mistakeLog, topicName, gainXP, setMascotMood, clearMistakeLog } = useGameStore();
+  if (!lesson || !topicName || !id) return <Navigate to="/map" replace />;
+  return <ReviewScreen key={lesson.id} lesson={lesson} id={id} topicName={topicName} />;
+}
+
+function ReviewScreen({ lesson, id, topicName }: { lesson: Lesson; id: string; topicName: string }) {
+  const navigate = useNavigate();
+  const { mistakeLog, gainXP, setMascotMood, clearMistakeLog } = useGameStore();
   const [reviewIndex, setReviewIndex] = useState(0);
   const [code, setCode] = useState('');
   const [validationState, setValidationState] = useState<'idle' | 'pass' | 'fail'>('idle');
@@ -38,23 +44,18 @@ export default function ReviewPage() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  if (!lesson || !topicName) return <Navigate to="/map" replace />;
-
   const resolve = (field: string | ((t: string) => string) | undefined): string => {
     if (!field) return '';
     if (typeof field === 'function') return field(topicName);
     return field.replace(/\{topic\}/g, topicName);
   };
 
-  const mistakes = (mistakeLog[lesson.id] || [])
+  // Copy before sorting: Array.prototype.sort mutates, and this array belongs to the store.
+  const mistakes = [...(mistakeLog[lesson.id] ?? [])]
     .sort((a, b) => b.failCount - a.failCount)
     .slice(0, 3);
 
   const totalReviewSteps = mistakes.length;
-
-  if (mistakes.length === 0) {
-    return <Navigate to={`/complete/${id}`} replace />;
-  }
 
   const currentMistake = mistakes[reviewIndex];
   const step = lesson.steps.find(s => s.id === currentMistake?.stepId);
@@ -64,7 +65,7 @@ export default function ReviewPage() {
       setCode(resolve(step.startingCode));
       setValidationState('idle');
       setMascotMood('idle', "Let's review this one! You struggled with it before, but you know how to do it now.");
-    } else if (reviewIndex >= mistakes.length) {
+    } else if (mistakes.length > 0 && reviewIndex >= mistakes.length) {
       navigate(`/complete/${id}`);
     }
   }, [reviewIndex, step]);
@@ -101,6 +102,7 @@ export default function ReviewPage() {
     }, 1000);
   };
 
+  if (mistakes.length === 0) return <Navigate to={`/complete/${id}`} replace />;
   if (!step) return null;
 
   return (

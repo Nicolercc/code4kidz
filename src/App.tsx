@@ -12,6 +12,7 @@ import ByteTypewriter from './components/ByteTypewriter';
 import Byte from './components/Byte';
 import { motion, AnimatePresence } from 'framer-motion';
 import { speak, stopSpeaking } from './utils/voice';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function daysBetween(from: string, to: string) {
   const a = new Date(from).getTime();
@@ -19,7 +20,7 @@ function daysBetween(from: string, to: string) {
   return Math.max(0, Math.floor((b - a) / 86400000));
 }
 
-function StreakBrokenOverlay() {
+export function StreakBrokenOverlay() {
   const navigate = useNavigate();
   const { topicName, streakJustBroke, lastPlayedDate, playedDates, dismissStreakBroken } = useGameStore();
 
@@ -45,13 +46,16 @@ function StreakBrokenOverlay() {
 
   const playedSet = useMemo(() => new Set(playedDates), [playedDates]);
   const todayISO = new Date().toISOString().slice(0, 10);
+  const isVisible = streakJustBroke && !!topicName;
 
-  if (!streakJustBroke || !topicName) return null;
-
+  // Hooks must run on every render, so the visibility check lives inside the effect.
   useEffect(() => {
+    if (!isVisible) return;
     speak('I waited for you. Come back every day and your streak grows.');
     return () => stopSpeaking();
-  }, []);
+  }, [isVisible]);
+
+  if (!isVisible) return null;
 
   return (
     <motion.div
@@ -181,20 +185,22 @@ function App() {
   }, [checkAndUpdateStreak]);
 
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-      <RouteSpeechStopper />
-      <AnimatePresence>
-        <StreakBrokenOverlay />
-      </AnimatePresence>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/map" element={<MapPage />} />
-        <Route path="/lesson/:id" element={<LessonPage />} />
-        <Route path="/review/:id" element={<ReviewPage />} />
-        <Route path="/complete/:id" element={<CompletePage />} />
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+        <RouteSpeechStopper />
+        <AnimatePresence>
+          <StreakBrokenOverlay />
+        </AnimatePresence>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/map" element={<MapPage />} />
+          <Route path="/lesson/:id" element={<LessonPage />} />
+          <Route path="/review/:id" element={<ReviewPage />} />
+          <Route path="/complete/:id" element={<CompletePage />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

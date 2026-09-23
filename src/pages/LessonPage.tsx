@@ -3,7 +3,7 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EditorView } from '@codemirror/view';
 import { useGameStore } from '../store/gameStore';
-import { lesson01, type LessonStep } from '../data/lessons/lesson-01';
+import { lesson01, type Lesson, type LessonStep } from '../data/lessons/lesson-01';
 import { lesson02 } from '../data/lessons/lesson-02';
 import { lesson03 } from '../data/lessons/lesson-03';
 import { lesson04 } from '../data/lessons/lesson-04';
@@ -55,8 +55,16 @@ function getHandoffText(stepType: string, topicName: string): string | null {
 
 export default function LessonPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const lesson = lessons[id as keyof typeof lessons];
+  const topicName = useGameStore((s) => s.topicName);
+
+  if (!lesson || !topicName || !id) return <Navigate to="/map" replace />;
+  // Keyed so switching lessons remounts the screen instead of leaking state between them.
+  return <LessonScreen key={lesson.id} lesson={lesson} id={id} />;
+}
+
+function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
+  const navigate = useNavigate();
 
   const {
     currentStepIndex,
@@ -118,8 +126,6 @@ export default function LessonPage() {
   /** True after this step has validated as pass; blocks stale debounced validation runs. */
   const passRecordedRef = useRef(false);
   const stepRef = useRef<LessonStep | null>(null);
-
-  if (!lesson || !topicName) return <Navigate to="/map" replace />;
 
   const resolve = (field: string | ((t: string) => string) | undefined): string => {
     if (!field) return '';

@@ -37,13 +37,17 @@ const X_OFFSETS = [-80, 0, 80, 0, -80, 0, 80, 0, -80, 0];
 const SKILL_TREE_TOP_OFFSET_PX = 55;
 
 export default function MapPage() {
-  const { topicName, completedLessons, xp, streak, playedDates } = useGameStore();
+  const topicName = useGameStore((s) => s.topicName);
+  if (!topicName) return <Navigate to="/onboarding" replace />;
+  return <MapScreen topicName={topicName} />;
+}
+
+function MapScreen({ topicName }: { topicName: string }) {
+  const { completedLessons, xp, streak, playedDates } = useGameStore();
   const [hoveredLocked, setHoveredLocked] = useState<number | null>(null);
   const [tappedLocked, setTappedLocked] = useState<number | null>(null);
   const [showByteBubble, setShowByteBubble] = useState(true);
   const currentRef = useRef<HTMLDivElement | null>(null);
-
-  if (!topicName) return <Navigate to="/onboarding" replace />;
 
   // FIX 2: background must work offline on any hardware (CSS-only).
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
