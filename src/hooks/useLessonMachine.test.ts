@@ -75,6 +75,14 @@ describe('useLessonMachine', () => {
     expect(result.current.phase).toBe('passed')
   })
 
+  it('does not let the delayed step prompt overwrite feedback from an early check', () => {
+    const { result } = renderMachine(lesson01, 4) // a fix step: handoff message, then the prompt 2.4s later
+    typeAndCheck(result, '<html><body>broken<body></html>')
+    expect(useGameStore.getState().byteMessage).toMatch(/not quite/i)
+    act(() => vi.advanceTimersByTime(5000))
+    expect(useGameStore.getState().byteMessage).toMatch(/not quite/i)
+  })
+
   it('shows warm-up mistakes without counting them', () => {
     const { result } = renderMachine(lessonTwo, 0)
     typeAndCheck(result, 'x')

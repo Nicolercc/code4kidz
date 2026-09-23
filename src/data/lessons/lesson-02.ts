@@ -24,11 +24,11 @@ Real web designers use exactly this every single day.
 And now so do you.`,
 
   steps: [
-    // ── STEP 0: WARM-UP (60 seconds, no hearts, reviews Lesson 1) ──
+    // ── STEP 0: WARM-UP (no hearts at risk, reviews Lesson 1) ──
     {
       id: 'warmup',
       type: 'warmup',
-      instruction: `Quick warm-up before we start! 60 seconds.
+      instruction: `Quick warm-up before we start!
 
 Build a {topic} page skeleton — html, head, and body.
 Put one heading about {topic} inside the body.

@@ -28,3 +28,7 @@ replit.nix
 
 # test runner cache
 .vitest/
+
+# Playwright
+/test-results/
+/playwright-report/

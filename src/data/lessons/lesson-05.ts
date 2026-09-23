@@ -31,7 +31,7 @@ export const lesson05: Lesson = {
       id: 'warmup',
       type: 'warmup',
       instruction: (topic: string) =>
-        `Warm-up — 60 seconds!\n\n` +
+        `Warm-up time!\n\n` +
         `Give your h1 a color in CSS.\n` +
         `One rule: h1 { color: [any color]; }\n\n` +
         `Your ${topic} page. Your color choice.`,

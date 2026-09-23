@@ -135,6 +135,7 @@ export function useLessonMachine({ lesson, step, stepIndex, topic, editorViewRef
   const handlePass = useCallback(() => {
     const { gainXP, recordMistake, setMascotMood, advanceStep, recordPractice } = useGameStore.getState()
     const { failCount } = attemptRef.current
+    timers.cancel('prompt') // the learner is past the intro; never let it overwrite this result
     dispatch({ type: 'CHECKED', result: 'pass', countsAsMistake: true })
     recordPractice() // a passed step is what counts toward the daily streak
 
@@ -171,6 +172,7 @@ export function useLessonMachine({ lesson, step, stepIndex, topic, editorViewRef
     const { loseHeart, setMascotMood, hearts } = useGameStore.getState()
     const isWarmup = step.type === 'warmup'
     const failCountAfter = attemptRef.current.failCount + (isWarmup ? 0 : 1)
+    timers.cancel('prompt') // an early check must not be overwritten by the delayed step prompt
     dispatch({ type: 'CHECKED', result: 'fail', countsAsMistake: !isWarmup })
 
     play('wrong')

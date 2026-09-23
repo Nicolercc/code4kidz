@@ -14,10 +14,11 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
+    "lint": "eslint src e2e",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "pnpm typecheck && pnpm lint && pnpm test && vite build"
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@codemirror/lang-html": "^6.4.11",

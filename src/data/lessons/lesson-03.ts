@@ -29,7 +29,7 @@ export const lesson03: Lesson = {
       id: 'warmup',
       type: 'warmup',
       instruction: (topic: string) =>
-        `Quick warm-up — 60 seconds, no pressure!\n\n` +
+        `Quick warm-up, no pressure!\n\n` +
         `Add an h1 about ${topic} and an h2 below it.\n` +
         `You already know how to do this from Lesson 2.`,
       // FIX 5: updated review prompt

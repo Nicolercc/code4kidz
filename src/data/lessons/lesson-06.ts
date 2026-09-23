@@ -31,7 +31,7 @@ export const lesson06: Lesson = {
       id: 'warmup',
       type: 'warmup',
       instruction: (topic: string) =>
-        `Warm-up — 60 seconds!\n\n` +
+        `Warm-up time!\n\n` +
         `Make an unordered list of 3 things about ${topic}.\n` +
         `ul tag with 3 li items inside.\n` +
         `You have done this before. Quick!`,

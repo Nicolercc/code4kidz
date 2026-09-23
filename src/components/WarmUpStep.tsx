@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Byte from './Byte';
 import ByteTypewriter from './ByteTypewriter';
@@ -10,22 +9,11 @@ interface WarmUpStepProps {
   lessonNumber: number;
 }
 
+// No countdown: warm-ups have no time limit, and a ticking clock that turns
+// red and then does nothing only adds pressure.
 // Warm-ups advance like any other step: when the kid's code in the editor
 // passes the step's validator (see LessonPage handleCodeChange).
 export default function WarmUpStep({ bytePrompt, instruction, lessonNumber }: WarmUpStepProps) {
-  const [timeLeft, setTimeLeft] = useState(60);
-
-  useEffect(() => {
-    // BUGFIX: warm-up/intro must never auto-advance. Timer is visual only.
-    if (timeLeft <= 0) return;
-    const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft]);
-
-  const radius = 28;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDash = (timeLeft / 60) * circumference;
-
   return (
     <div className="relative flex flex-col h-full pt-4 md:pt-0 px-6 pb-6 gap-6 overflow-y-auto">
       {/* Warm-up Badge */}
@@ -35,33 +23,10 @@ export default function WarmUpStep({ bytePrompt, instruction, lessonNumber }: Wa
         className="flex items-center gap-3 rounded-2xl px-4 py-3"
         style={{ background: '#FEF0D6', border: '2px solid #D4581A' }}
       >
-        <span className="text-2xl">⚡</span>
+        <span className="text-2xl" aria-hidden="true">⚡</span>
         <div>
-          <div className="font-black uppercase text-sm tracking-[0.08em]" style={{ color: '#D4581A' }}>WARM-UP!</div>
+          <div className="font-black uppercase text-sm tracking-[0.08em]" style={{ color: '#A8430F' }}>WARM-UP!</div>
           <div className="text-xs mt-0.5" style={{ color: '#854F0B' }}>No hearts at risk</div>
-        </div>
-        {/* Timer Circle */}
-        <div className="ml-auto relative w-16 h-16 shrink-0">
-          <svg className="w-16 h-16 -rotate-90" viewBox="0 0 70 70">
-            <circle
-              cx="35" cy="35" r={radius}
-              fill="none"
-              stroke="#FDE8C4"
-              strokeWidth="6"
-            />
-            <circle
-              cx="35" cy="35" r={radius}
-              fill="none"
-              stroke={timeLeft > 15 ? '#D4581A' : '#ef4444'}
-              strokeWidth="6"
-              strokeDasharray={`${strokeDash} ${circumference}`}
-              strokeLinecap="round"
-              style={{ transition: 'stroke-dasharray 1s linear' }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center font-mono font-bold text-sm" style={{ color: '#D4581A' }}>
-            {timeLeft}
-          </div>
         </div>
       </motion.div>
 
@@ -93,7 +58,7 @@ export default function WarmUpStep({ bytePrompt, instruction, lessonNumber }: Wa
             fontSize: 11,
             fontWeight: 900,
             letterSpacing: '0.1em',
-            color: '#D4581A',
+            color: '#A8430F',
             textTransform: 'uppercase',
             marginBottom: 8,
           }}>

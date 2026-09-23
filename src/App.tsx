@@ -12,9 +12,9 @@ const CompletePage = lazy(() => import('./pages/CompletePage'));
 
 function PageLoading() {
   return (
-    <div role="status" className="min-h-dvh flex items-center justify-center bg-brand-bg text-brand-dark font-bold">
-      Loading your lesson…
-    </div>
+    <main className="min-h-dvh flex items-center justify-center bg-brand-bg text-brand-dark font-bold">
+      <h1 role="status">Loading your lesson…</h1>
+    </main>
   );
 }
 import NotFoundPage from './pages/NotFoundPage';
