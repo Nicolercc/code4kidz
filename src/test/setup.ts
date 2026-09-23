@@ -27,6 +27,10 @@ if (!Range.prototype.getClientRects) {
   Range.prototype.getBoundingClientRect = () => new DOMRect();
 }
 
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 afterEach(() => {
   cleanup();
   localStorage.clear();

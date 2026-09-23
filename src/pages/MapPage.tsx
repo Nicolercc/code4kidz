@@ -4,8 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { LESSONS, isLessonUnlocked } from '../data/lessons';
 import ByteTypewriter from '../components/ByteTypewriter';
-import XPCounter from '../components/XPCounter';
-import StreakBadge from '../components/StreakBadge';
 import StreakCalendar from '../components/StreakCalendar';
 
 interface LessonNode {
@@ -25,6 +23,13 @@ const LESSON_NODES: LessonNode[] = [
   { id: 'lesson-09', num: 9, title: 'Animate Your Page',      emoji: '🔒', comingSoon: true, teaser: 'Tiny motion that feels alive.', comingSoonTopic: 'CSS animations' },
   { id: 'lesson-10', num: 10, title: 'Make a Mini Game!',     emoji: '🔒', comingSoon: true, teaser: 'Score points with JS.', comingSoonTopic: 'JavaScript games' },
 ];
+
+/** Real lessons are locked until the previous one is done; lessons 7+ do not exist yet. */
+function lockedLabel(node: LessonNode): string {
+  return node.comingSoon
+    ? `${node.title}. Coming soon.`
+    : `Lesson ${node.num}: ${node.title}. Locked: finish lesson ${node.num - 1} first.`
+}
 
 // Winding offsets: left, center, right, center, left...
 const X_OFFSETS = [-80, 0, 80, 0, -80, 0, 80, 0, -80, 0];
@@ -331,25 +336,24 @@ function MapScreen({ topicName }: { topicName: string }) {
           {/* Streak badge */}
           <div className="flex items-center gap-1 px-3 py-1.5 rounded-full"
             style={{ background: 'rgba(212,88,26,0.2)', border: '1px solid rgba(212,88,26,0.4)' }}>
-            <span style={{ fontSize: 14 }}>🔥</span>
-            <span style={{ color: '#ff9f60', fontSize: 14, fontWeight: 800 }}>{streak}</span>
+            <span aria-hidden="true" style={{ fontSize: 14 }}>🔥</span>
+            <span style={{ color: '#ff9f60', fontSize: 14, fontWeight: 800 }}>{streak}<span className="sr-only"> day streak</span></span>
           </div>
           {/* XP badge */}
           <div className="flex items-center gap-1 px-3 py-1.5 rounded-full"
             style={{ background: 'rgba(92,62,188,0.2)', border: '1px solid rgba(92,62,188,0.4)' }}>
-            <span style={{ fontSize: 14 }}>⭐</span>
+            <span aria-hidden="true" style={{ fontSize: 14 }}>⭐</span>
             <span style={{ color: '#c4a8ff', fontSize: 14, fontWeight: 800 }}>{xp} XP</span>
           </div>
-          {/* Original components (hidden but kept for store reactivity) */}
-          <span className="hidden"><StreakBadge /><XPCounter /></span>
         </div>
       </header>
 
+      <main className="w-full flex-1 flex flex-col items-center">
       {/* ── Title ── */}
-      <p className="text-white font-black text-base pt-5 pb-1" style={{ textAlign: 'center' }}>
+      <h1 className="text-white font-black text-base pt-5 pb-1" style={{ textAlign: 'center' }}>
         Your Coding Journey
-      </p>
-      <p className="text-xs pb-5" style={{ color: 'rgba(255,255,255,0.45)', textAlign: 'center' }}>
+      </h1>
+      <p className="text-xs pb-5" style={{ color: 'rgba(255,255,255,0.75)', textAlign: 'center' }}>
         {topicName} skill tree
       </p>
 
@@ -359,7 +363,7 @@ function MapScreen({ topicName }: { topicName: string }) {
       </div>
 
       {/* ── Skill Tree ── */}
-      <main
+      <div
         className="flex-1 w-full pb-32 flex flex-col items-center relative"
         style={{
           maxWidth: 480,
@@ -405,7 +409,7 @@ function MapScreen({ topicName }: { topicName: string }) {
               >
                 {/* ── Completed ── */}
                 {isCompleted && (
-                  <Link to={`/lesson/${node.num}`} className="block relative" title={node.title}>
+                  <Link to={`/lesson/${node.num}`} className="block relative" aria-label={`Lesson ${node.num}: ${node.title} (completed, play again)`}>
                     <motion.div
                       whileHover={{ scale: 1.08 }}
                       style={{
@@ -441,14 +445,15 @@ function MapScreen({ topicName }: { topicName: string }) {
                     />
                     {/* START badge */}
                     <motion.div
+                      aria-hidden="true"
                       className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-black px-3 py-1 rounded-full pointer-events-none z-10"
-                      style={{ background: '#9B72F0', color: 'white', fontSize: 11 }}
+                      style={{ background: '#5C3EBC', color: 'white', fontSize: 11 }}
                       animate={{ y: [0, -4, 0] }}
                       transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                     >
                       TAP!
                     </motion.div>
-                    <Link to={`/lesson/${node.num}`}>
+                    <Link to={`/lesson/${node.num}`} aria-label={`Lesson ${node.num}: ${node.title} (start here)`}>
                       <motion.div
                         whileTap={{ scale: 0.95 }}
                         style={{
@@ -499,7 +504,7 @@ function MapScreen({ topicName }: { topicName: string }) {
                       role="button"
                       tabIndex={0}
                       aria-disabled="true"
-                      aria-label={`${node.title}. Coming soon.`}
+                      aria-label={lockedLabel(node)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
@@ -545,7 +550,7 @@ function MapScreen({ topicName }: { topicName: string }) {
                           className="absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold shadow-lg z-30 pointer-events-none"
                           style={{ background: 'rgba(20,12,48,0.95)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.15)' }}
                         >
-                          {`Coming soon — ${node.comingSoonTopic ?? 'More coding adventures'}`}
+                          {node.comingSoon ? `Coming soon — ${node.comingSoonTopic ?? 'More coding adventures'}` : `Finish lesson ${node.num - 1} first`}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -595,7 +600,7 @@ function MapScreen({ topicName }: { topicName: string }) {
         <p className="text-center mt-8 text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
           Tap a node to start a lesson
         </p>
-      </main>
+      </div>
 
       {/* ── Footer: ambient Byte message (no tap gate; map interaction dismisses) ── */}
       {showByteBubble && (
@@ -608,6 +613,7 @@ function MapScreen({ topicName }: { topicName: string }) {
           </motion.div>
         </div>
       )}
+      </main>
       </div>
     </div>
   );

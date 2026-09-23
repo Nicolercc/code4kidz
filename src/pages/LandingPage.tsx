@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion, useInView } from 'framer-motion';
 import Byte from '../components/Byte';
 
-const NAV_LINKS = ['Home', 'Learn', 'Classroom'];
 
 const FEATURES = [
   {
@@ -185,6 +184,7 @@ function FloatingBadge({
 }) {
   return (
     <motion.div
+      aria-hidden="true"
       className={`absolute px-3 py-1.5 rounded-full text-sm font-bold shadow-lg font-poppins ${className}`}
       animate={{ y: animateY }}
       transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
@@ -230,40 +230,18 @@ export default function LandingPage() {
             <span className="font-poppins font-black text-lg text-brand-purple hidden sm:block">Code4Kidz</span>
           </div>
 
-          <div className="hidden sm:flex items-center gap-1 flex-1">
-            {NAV_LINKS.map((link, i) => {
-              const isClassroom = i === 2;
-              return (
-                <div key={link} className="relative group">
-                  <button
-                    className={`px-4 py-2 rounded-full text-sm font-semibold font-poppins transition-colors ${
-                      i === 0 ? 'bg-brand-purpleP text-brand-purple' : 'text-gray-500 hover:bg-gray-100'
-                    }`}
-                    style={isClassroom ? { opacity: 0.4, pointerEvents: 'none', cursor: 'not-allowed' } : undefined}
-                    tabIndex={isClassroom ? -1 : undefined}
-                  >
-                    {i === 0 ? '🏠 ' : i === 1 ? '📖 ' : '🎓 '}{link}
-                  </button>
-                  {isClassroom && (
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 hidden group-hover:block whitespace-nowrap bg-gray-800 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg pointer-events-none z-50 shadow-lg">
-                      Coming soon!
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={() => navigate('/onboarding')}
-              className="px-4 py-2 rounded-full text-sm font-black font-poppins bg-brand-orange text-white shadow-[0_4px_0_#A84310] hover:shadow-[0_2px_0_#A84310] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all"
+              className="px-4 py-2 rounded-full text-sm font-black font-poppins bg-[#B84A12] text-white shadow-[0_4px_0_#A84310] hover:shadow-[0_2px_0_#A84310] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all"
             >
               🚀 Start Learning Free
             </button>
           </div>
         </div>
       </nav>
+
+      <main>
 
       {/* ── HERO ── */}
       <section className="relative bg-gradient-to-br from-[#2A0B6B] via-[#4B1FA0] to-[#6B3FCC] min-h-[620px] flex items-center overflow-visible">
@@ -286,17 +264,10 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-5xl lg:text-6xl font-black leading-tight mb-2 font-poppins"
+              className="mb-4"
             >
-              Learn to Code.
-            </motion.h1>
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-5xl lg:text-6xl font-black leading-tight text-kidz-teal mb-4 font-poppins"
-            >
-              Level Up. Have Fun!
+              <span className="block text-5xl lg:text-6xl font-black leading-tight mb-2 font-poppins">Learn to Code.</span>
+              <span className="block text-5xl lg:text-6xl font-black leading-tight text-kidz-teal mb-4 font-poppins">Level Up. Have Fun!</span>
             </motion.h1>
 
             <motion.p
@@ -316,18 +287,9 @@ export default function LandingPage() {
             >
               <button
                 onClick={() => navigate('/onboarding')}
-                className="px-6 py-3.5 bg-brand-orange text-white font-black text-lg rounded-2xl shadow-[0_6px_0_#A84310] hover:shadow-[0_4px_0_#A84310] hover:translate-y-0.5 active:shadow-none active:translate-y-1.5 transition-all font-poppins"
+                className="px-6 py-3.5 bg-[#B84A12] text-white font-black text-lg rounded-2xl shadow-[0_6px_0_#A84310] hover:shadow-[0_4px_0_#A84310] hover:translate-y-0.5 active:shadow-none active:translate-y-1.5 transition-all font-poppins"
               >
                 🚀 Start Learning Free!
-              </button>
-              <button
-                onClick={() => navigate('/onboarding')}
-                className="text-sm font-semibold font-quicksand"
-                style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.textDecoration = 'underline'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.textDecoration = 'none'; }}
-              >
-                Facilitator? Learn more →
               </button>
             </motion.div>
 
@@ -360,7 +322,7 @@ export default function LandingPage() {
             >
               +100 XP! 🌟
             </FloatingBadge>
-            <FloatingBadge className="bg-kidz-pink text-white bottom-12 -left-8 z-10">
+            <FloatingBadge className="bg-[#C2185B] text-white bottom-12 -left-8 z-10">
               ❤️ ×5
             </FloatingBadge>
 
@@ -534,6 +496,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── FOOTER ── */}
+      </main>
+
       <footer className="bg-kidz-navy text-gray-400 py-8 px-6 text-center">
         <div className="flex items-center justify-center gap-2 mb-3">
           <span className="text-2xl">🌱</span>

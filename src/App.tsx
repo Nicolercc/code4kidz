@@ -7,10 +7,11 @@ import MapPage from './pages/MapPage';
 import LessonPage from './pages/LessonPage';
 import ReviewPage from './pages/ReviewPage';
 import CompletePage from './pages/CompletePage';
+import NotFoundPage from './pages/NotFoundPage';
 import { useGameStore } from './store/gameStore';
 import ByteTypewriter from './components/ByteTypewriter';
 import Byte from './components/Byte';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import ErrorBoundary from './components/ErrorBoundary';
 import StreakCalendar from './components/StreakCalendar';
 
@@ -105,6 +106,8 @@ function App() {
 
   return (
     <ErrorBoundary>
+      {/* Every framer-motion animation follows the OS "reduce motion" setting. */}
+      <MotionConfig reducedMotion="user">
       <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
         <AnimatePresence>
           <StreakBrokenOverlay />
@@ -116,8 +119,10 @@ function App() {
           <Route path="/lesson/:id" element={<LessonPage />} />
           <Route path="/review/:id" element={<ReviewPage />} />
           <Route path="/complete/:id" element={<CompletePage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
+      </MotionConfig>
     </ErrorBoundary>
   );
 }

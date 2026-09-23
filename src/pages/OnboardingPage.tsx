@@ -72,11 +72,12 @@ export default function OnboardingPage() {
     setTimeout(() => setByteMood('idle'), 2500);
   };
 
+  // Returning learners skip onboarding. Only check on arrival: saving the topic
+  // mid-onboarding (step 2) must not jump past the celebration screens.
+  const [hadTopicOnArrival] = useState(() => !!useGameStore.getState().topicName);
   useEffect(() => {
-    if (topicName) {
-      navigate('/map', { replace: true });
-    }
-  }, [topicName, navigate]);
+    if (hadTopicOnArrival) navigate('/map', { replace: true });
+  }, [hadTopicOnArrival, navigate]);
 
   const handleNext = () => {
     if (step === 2 && inputValue.trim()) {
@@ -101,7 +102,7 @@ export default function OnboardingPage() {
   );
 
   return (
-    <div
+    <main
       className="on-dark min-h-[100dvh] w-full flex items-center justify-center overflow-hidden relative"
       style={{ background: 'linear-gradient(145deg, #1a0a3d 0%, #3d1278 50%, #1a2a6c 100%)' }}
     >
@@ -143,8 +144,8 @@ export default function OnboardingPage() {
                 className="mt-8 rounded-3xl px-10 py-5 text-center"
                 style={{ background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}
               >
-                <p className="text-3xl font-black text-white">HI! I'M BYTE.</p>
-                <p className="text-lg font-bold mt-1" style={{ color: 'white' }}>YOUR ROBOT CODING BUDDY 🤖</p>
+                <h1 className="text-3xl font-black text-white">HI! I&apos;M BYTE.</h1>
+                <p className="text-lg font-bold mt-1" style={{ color: 'white' }}>YOUR ROBOT CODING BUDDY <span aria-hidden="true">🤖</span></p>
               </motion.div>
 
               <div className="mt-8">
@@ -197,15 +198,18 @@ export default function OnboardingPage() {
               </AnimatePresence>
             </div>
 
-            <h1 className="text-3xl font-black text-white mb-2" style={{ fontSize: 'clamp(22px, 5vw, 28px)', lineHeight: 1.25 }}>
-              WHAT DO YOU LOVE?
+            <h1 id="topic-question" className="text-3xl font-black text-white mb-2" style={{ fontSize: 'clamp(22px, 5vw, 28px)', lineHeight: 1.25 }}>
+              <label htmlFor="topic-input">WHAT DO YOU LOVE?</label>
             </h1>
-            <p className="mb-6 font-medium" style={{ color: 'rgba(255,255,255,0.65)', fontSize: 15 }}>
+            <p id="topic-help" className="mb-6 font-medium" style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15 }}>
               We are going to build a real webpage about it!
             </p>
 
             <input
+              id="topic-input"
               type="text"
+              aria-describedby="topic-help"
+              autoComplete="off"
               value={inputValue}
               onChange={(e) => {
                 const val = e.target.value;
@@ -215,7 +219,7 @@ export default function OnboardingPage() {
               placeholder="Type your favorite thing..."
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-              className="w-full text-center text-xl font-bold mb-6 focus:outline-none transition-all"
+              className="w-full text-center text-xl font-bold mb-6 transition-all"
               style={{
                 background: 'rgba(255,255,255,0.1)',
                 border: '2px solid rgba(255,255,255,0.25)',
@@ -235,6 +239,8 @@ export default function OnboardingPage() {
                 return (
                   <motion.button
                     key={ex}
+                    type="button"
+                    aria-pressed={selected}
                     onClick={() => {
                       setInputValue(ex);
                       triggerByteCheer(ex);
@@ -301,9 +307,9 @@ export default function OnboardingPage() {
             >
               <Byte mood="cheer" size={160} showSpeech />
             </motion.div>
-            <h2 className="text-5xl font-black text-white uppercase break-words drop-shadow-md">
+            <h1 className="text-5xl font-black text-white uppercase break-words drop-shadow-md">
               {topicName}!
-            </h2>
+            </h1>
             <div className="max-w-md text-center">
               <div
                 style={{
@@ -378,9 +384,9 @@ export default function OnboardingPage() {
             </div>
 
             <div className="space-y-6">
-              <h2 className="text-3xl font-black text-white">
+              <h1 className="text-3xl font-black text-white">
                 YOU ARE A CODER NOW.
-              </h2>
+              </h1>
               <p className="text-xl font-medium" style={{ color: 'rgba(255,255,255,0.8)' }}>
                 Today you will write real code.
                 <br />
@@ -405,12 +411,12 @@ export default function OnboardingPage() {
                 boxShadow: '0 6px 28px rgba(212,88,26,0.55)',
               }}
             >
-              START LESSON 1 🚀
+              START LESSON 1 <span aria-hidden="true">🚀</span>
             </motion.button>
           </motion.div>
         )}
 
       </AnimatePresence>
-    </div>
+    </main>
   );
 }
