@@ -6,6 +6,7 @@ import { LESSONS, isLessonUnlocked } from '../data/lessons';
 import ByteTypewriter from '../components/ByteTypewriter';
 import XPCounter from '../components/XPCounter';
 import StreakBadge from '../components/StreakBadge';
+import StreakCalendar from '../components/StreakCalendar';
 
 interface LessonNode {
   id: string;
@@ -283,20 +284,6 @@ function MapScreen({ topicName }: { topicName: string }) {
     currentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [completedLessons.length]);
 
-  const last7 = (() => {
-    const now = new Date();
-    const days: Array<{ iso: string; label: string }> = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 86400000);
-      const iso = d.toISOString().slice(0, 10);
-      const label = d.toLocaleDateString(undefined, { weekday: 'short' });
-      days.push({ iso, label });
-    }
-    return days;
-  })();
-  const playedSet = new Set(playedDates);
-  const todayISO = new Date().toISOString().slice(0, 10);
-
   const contextMessage =
     completedLessons.length === 0
       ? 'Tap the glowing node to start your first lesson.'
@@ -367,44 +354,8 @@ function MapScreen({ topicName }: { topicName: string }) {
       </p>
 
       {/* ── Streak Calendar (last 7 days) ── */}
-      <div style={{ width: '100%', maxWidth: 480, margin: '0 auto', padding: '0 20px 14px', position: 'relative', zIndex: 20, background: 'transparent' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 6 }}>
-          {last7.map((d) => {
-            const isToday = d.iso === todayISO;
-            const didPlay = playedSet.has(d.iso);
-            const bg = didPlay ? (isToday ? '#1A7A4E' : '#5C3EBC') : 'rgba(255,255,255,0.1)';
-            const border = isToday && !didPlay ? '2px solid rgba(212,88,26,0.9)' : '2px solid rgba(255,255,255,0.12)';
-            return (
-              <motion.div
-                key={d.iso}
-                animate={isToday && !didPlay ? { boxShadow: ['0 0 0 0 rgba(212,88,26,0)', '0 0 0 8px rgba(212,88,26,0.25)', '0 0 0 0 rgba(212,88,26,0)'] } : {}}
-                transition={isToday && !didPlay ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : {}}
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 999,
-                  background: bg,
-                  border,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: 900,
-                  fontSize: 14,
-                }}
-              >
-                {didPlay ? '✓' : ''}
-              </motion.div>
-            );
-          })}
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
-          {last7.map((d) => (
-            <div key={`${d.iso}-lbl`} style={{ width: 28, textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>
-              {d.label}
-            </div>
-          ))}
-        </div>
+      <div style={{ width: '100%', maxWidth: 480, margin: '0 auto', padding: '0 20px 14px', position: 'relative', zIndex: 20 }}>
+        <StreakCalendar playedDates={playedDates} />
       </div>
 
       {/* ── Skill Tree ── */}

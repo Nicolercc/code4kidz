@@ -6,7 +6,7 @@ import { useGameStore } from "./store/gameStore";
 
 describe("StreakBrokenOverlay", () => {
   it("shows and hides as the streak breaks and is dismissed, without crashing", () => {
-    useGameStore.setState({ topicName: "Space", streakJustBroke: false, lastPlayedDate: "" });
+    useGameStore.setState({ topicName: "Space", streakBrokenAfterDaysMissed: null, playedDates: [] });
 
     render(
       <MemoryRouter>
@@ -15,9 +15,10 @@ describe("StreakBrokenOverlay", () => {
     );
     expect(screen.queryByText(/your streak broke/i)).toBeNull();
 
-    // This is what checkAndUpdateStreak does on app load after 2+ missed days.
-    act(() => useGameStore.setState({ streakJustBroke: true }));
+    // What checkStreak does on app load after a streak of 2+ ends.
+    act(() => useGameStore.setState({ streakBrokenAfterDaysMissed: 2 }));
     expect(screen.getByText(/your streak broke/i)).toBeTruthy();
+    expect(screen.getByText(/gone for 2 days/i)).toBeTruthy();
 
     act(() => useGameStore.getState().dismissStreakBroken());
     expect(screen.queryByText(/your streak broke/i)).toBeNull();

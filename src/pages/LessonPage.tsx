@@ -70,7 +70,7 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
   // Out of hearts: end the lesson and go back to the map.
   useEffect(() => {
     if (hearts !== 0) return;
-    setMascotMood('sad', 'Zero hearts. Come back tomorrow — hearts will be full again!');
+    setMascotMood('sad', 'Out of hearts. Take a breath, then start this lesson again with full hearts.');
     timers.schedule('outOfHearts', () => navigate('/map'), 2000);
   }, [hearts, navigate, setMascotMood, timers]);
 

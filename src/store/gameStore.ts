@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { checkStreak, localDateKey, recordPractice } from '../lesson/streak'
 
 export type MascotMood = 'idle' | 'cheer' | 'think' | 'sad' | 'story' | 'celebrate'
 
@@ -10,13 +11,13 @@ export interface MistakeEntry {
   startingCode: string
 }
 
+const MAX_HEARTS = 3
+
 interface GameState {
   // Identity
   topicName: string
-  classroomCode: string
 
   // Progress
-  currentLessonId: string
   completedLessons: string[]
   currentStepIndex: number
 
@@ -25,9 +26,11 @@ interface GameState {
   hearts: number
   heartsLostThisLesson: number
   streak: number
-  lastPlayedDate: string
+  /** Local "YYYY-MM-DD" of the last passed step (see lesson/streak.ts). */
+  lastPracticeDate: string
   playedDates: string[]
-  streakJustBroke: boolean
+  /** Set on app open when a streak of 2+ just ended; drives the "streak broke" screen. */
+  streakBrokenAfterDaysMissed: number | null
   isMuted: boolean
 
   // Lesson state
@@ -35,12 +38,11 @@ interface GameState {
   mascotMood: MascotMood
   byteMessage: string
 
-  // Mistake tracking (session only — NOT persisted)
+  /** Steps the learner needed more than one check for, per lesson, for the review screen. */
   mistakeLog: Record<string, MistakeEntry[]>
 
   // Actions
   setTopic: (name: string) => void
-  setClassroomCode: (code: string) => void
   gainXP: (amount: number) => void
   loseHeart: () => void
   refillHearts: () => void
@@ -51,7 +53,10 @@ interface GameState {
   recordMistake: (lessonId: string, entry: MistakeEntry) => void
   clearMistakeLog: (lessonId: string) => void
   markLessonComplete: (lessonId: string) => void
-  checkAndUpdateStreak: () => void
+  /** Call when a step passes: counts today toward the streak. */
+  recordPractice: () => void
+  /** Call when the app opens: ends the streak after a missed day. */
+  checkStreak: () => void
   toggleMute: () => void
   dismissStreakBroken: () => void
 }
@@ -60,17 +65,15 @@ export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
       topicName: '',
-      classroomCode: '',
-      currentLessonId: 'lesson-01',
       completedLessons: [],
       currentStepIndex: 0,
       xp: 0,
-      hearts: 3,
+      hearts: MAX_HEARTS,
       heartsLostThisLesson: 0,
       streak: 0,
-      lastPlayedDate: '',
+      lastPracticeDate: '',
       playedDates: [],
-      streakJustBroke: false,
+      streakBrokenAfterDaysMissed: null,
       isMuted: false,
       code: '',
       mascotMood: 'idle',
@@ -78,20 +81,23 @@ export const useGameStore = create<GameState>()(
       mistakeLog: {},
 
       setTopic: (name) => set({ topicName: name }),
-      setClassroomCode: (code) => set({ classroomCode: code }),
 
       gainXP: (amount) => set((s) => ({ xp: s.xp + amount })),
 
-      loseHeart: () => set((s) => ({
-        hearts: Math.max(0, s.hearts - 1),
-        heartsLostThisLesson: s.heartsLostThisLesson + 1,
-        mascotMood: 'sad',
-        byteMessage: s.hearts === 1
-          ? "That was your last heart. Take a breath — you can try again tomorrow with full hearts!"
-          : "Oops! That is okay. Every coder gets this wrong sometimes."
-      })),
+      // The message says how many hearts are left, so the loss is not shown by the heart icons alone.
+      loseHeart: () => set((s) => {
+        const hearts = Math.max(0, s.hearts - 1)
+        return {
+          hearts,
+          heartsLostThisLesson: s.heartsLostThisLesson + 1,
+          mascotMood: 'sad',
+          byteMessage: hearts === 0
+            ? 'That was your last heart. Take a breath, then start this lesson again with full hearts.'
+            : `Oops, that cost a heart. ${hearts} ${hearts === 1 ? 'heart' : 'hearts'} left. Every coder gets this wrong sometimes.`,
+        }
+      }),
 
-      refillHearts: () => set({ hearts: 3 }),
+      refillHearts: () => set({ hearts: MAX_HEARTS }),
 
       advanceStep: () => set((s) => ({
         currentStepIndex: s.currentStepIndex + 1,
@@ -106,13 +112,13 @@ export const useGameStore = create<GameState>()(
 
       toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
 
-      dismissStreakBroken: () => set({ streakJustBroke: false }),
+      dismissStreakBroken: () => set({ streakBrokenAfterDaysMissed: null }),
 
       recordMistake: (lessonId, entry) => set((s) => ({
         mistakeLog: {
           ...s.mistakeLog,
-          [lessonId]: [...(s.mistakeLog[lessonId] ?? []), entry]
-        }
+          [lessonId]: [...(s.mistakeLog[lessonId] ?? []), entry],
+        },
       })),
 
       clearMistakeLog: (lessonId) => set((s) => {
@@ -122,48 +128,37 @@ export const useGameStore = create<GameState>()(
       }),
 
       markLessonComplete: (lessonId) => set((s) => ({
-        completedLessons: [...s.completedLessons, lessonId],
+        completedLessons: s.completedLessons.includes(lessonId) ? s.completedLessons : [...s.completedLessons, lessonId],
         currentStepIndex: 0,
-        hearts: 3,
+        hearts: MAX_HEARTS,
         heartsLostThisLesson: 0,
         code: '',
       })),
 
-      checkAndUpdateStreak: () => {
-        const now = new Date()
-        const todayStr = now.toDateString()
-        const todayISO = now.toISOString().slice(0, 10)
-        const { lastPlayedDate, streak, playedDates } = get()
-        if (lastPlayedDate === todayStr) return
+      recordPractice: () => set((s) => recordPractice(s, localDateKey())),
 
-        const last = lastPlayedDate ? new Date(lastPlayedDate) : null
-        const daysSince = last ? Math.floor((now.getTime() - last.getTime()) / 86400000) : 0
-        const missedMoreThanOneDay = lastPlayedDate !== '' && daysSince > 1
-        const broke = missedMoreThanOneDay && streak >= 2
-
-        const nextStreak = (!lastPlayedDate || daysSince <= 1) ? streak + 1 : 1
-
-        const nextPlayed = (() => {
-          const setIso = new Set(playedDates)
-          setIso.add(todayISO)
-          const sorted = Array.from(setIso).sort()
-          return sorted.slice(Math.max(0, sorted.length - 30))
-        })()
-
-        set({
-          streak: nextStreak,
-          lastPlayedDate: todayStr,
-          playedDates: nextPlayed,
-          streakJustBroke: broke,
-        })
+      checkStreak: () => {
+        const { streak, brokenAfterDaysMissed } = checkStreak(get(), localDateKey())
+        set({ streak, ...(brokenAfterDaysMissed !== null ? { streakBrokenAfterDaysMissed: brokenAfterDaysMissed } : {}) })
       },
     }),
     {
       name: 'code4kidz-store',
-      partialize: (s) => {
-        const { mistakeLog: _mistakeLog, ...rest } = s
-        return rest
-      }
-    }
-  )
+      version: 1,
+      // v0 stored the last visit as toDateString() under lastPlayedDate and
+      // counted app opens rather than practice.
+      migrate: (persisted, version) => {
+        const state = persisted as Record<string, unknown>
+        if (version < 1) {
+          const last = typeof state.lastPlayedDate === 'string' && state.lastPlayedDate
+          state.lastPracticeDate = last ? localDateKey(new Date(last)) : ''
+          state.streakBrokenAfterDaysMissed = null
+          for (const key of ['lastPlayedDate', 'streakJustBroke', 'classroomCode', 'currentLessonId', 'failCount', 'hintsUsed', 'hasEditedCurrentStep', 'voiceEnabled']) {
+            delete state[key]
+          }
+        }
+        return state as unknown as GameState
+      },
+    },
+  ),
 )

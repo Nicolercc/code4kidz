@@ -35,7 +35,7 @@ function typeAndCheck(result: Machine, code: string) {
 describe('useLessonMachine', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    useGameStore.setState({ currentStepIndex: STEP_INDEX, xp: 0, hearts: 3, mistakeLog: {} })
+    useGameStore.setState({ currentStepIndex: STEP_INDEX, xp: 0, hearts: 3, mistakeLog: {}, streak: 0, lastPracticeDate: '', playedDates: [] })
   })
   afterEach(() => vi.useRealTimers())
 
@@ -46,6 +46,7 @@ describe('useLessonMachine', () => {
     expect(result.current.phase).toBe('passed')
     act(() => vi.advanceTimersByTime(XP_DELAY_MS))
     expect(useGameStore.getState().xp).toBe(10)
+    expect(useGameStore.getState().streak).toBe(1) // passing a step is practice
     act(() => vi.advanceTimersByTime(PASS_ADVANCE_MS - XP_DELAY_MS))
     expect(useGameStore.getState().currentStepIndex).toBe(STEP_INDEX + 1)
   })

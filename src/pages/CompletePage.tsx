@@ -24,7 +24,6 @@ function CompleteScreen({ lesson, topicName }: { lesson: Lesson; topicName: stri
     xp,
     gainXP, 
     markLessonComplete, 
-    checkAndUpdateStreak,
     heartsLostThisLesson,
     completedLessons,
     clearMistakeLog
@@ -102,9 +101,8 @@ function CompleteScreen({ lesson, topicName }: { lesson: Lesson; topicName: stri
     }, 1000);
 
     markLessonComplete(lesson.id);
-    checkAndUpdateStreak();
     clearMistakeLog(lesson.id);
-  }, [lesson.id, completedLessons, gainXP, markLessonComplete, checkAndUpdateStreak, clearMistakeLog]);
+  }, [lesson.id, completedLessons, gainXP, markLessonComplete, clearMistakeLog]);
 
   const isPerfect = heartsLostThisLesson === 0;
   const celebrationQuote = resolve(lesson.celebrationQuote);

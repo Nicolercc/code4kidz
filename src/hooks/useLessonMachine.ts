@@ -133,9 +133,10 @@ export function useLessonMachine({ lesson, step, stepIndex, topic, editorViewRef
   }, [lesson.id, step, stepIndex, topic, resolve, timers])
 
   const handlePass = useCallback(() => {
-    const { gainXP, recordMistake, setMascotMood, advanceStep } = useGameStore.getState()
+    const { gainXP, recordMistake, setMascotMood, advanceStep, recordPractice } = useGameStore.getState()
     const { failCount } = attemptRef.current
     dispatch({ type: 'CHECKED', result: 'pass', countsAsMistake: true })
+    recordPractice() // a passed step is what counts toward the daily streak
 
     play('correct')
     setPreviewGlow(true)

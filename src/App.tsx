@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 
 import LandingPage from './pages/LandingPage';
 import OnboardingPage from './pages/OnboardingPage';
@@ -12,40 +12,12 @@ import ByteTypewriter from './components/ByteTypewriter';
 import Byte from './components/Byte';
 import { motion, AnimatePresence } from 'framer-motion';
 import ErrorBoundary from './components/ErrorBoundary';
-
-function daysBetween(from: string, to: string) {
-  const a = new Date(from).getTime();
-  const b = new Date(to).getTime();
-  return Math.max(0, Math.floor((b - a) / 86400000));
-}
+import StreakCalendar from './components/StreakCalendar';
 
 export function StreakBrokenOverlay() {
   const navigate = useNavigate();
-  const { topicName, streakJustBroke, lastPlayedDate, playedDates, dismissStreakBroken } = useGameStore();
-
-  const daysMissed = useMemo(() => {
-    if (!lastPlayedDate) return 0;
-    const last = new Date(lastPlayedDate).toDateString();
-    const today = new Date().toDateString();
-    const d = daysBetween(last, today);
-    return Math.max(0, d);
-  }, [lastPlayedDate]);
-
-  const last7 = useMemo(() => {
-    const now = new Date();
-    const days: Array<{ iso: string; label: string }> = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 86400000);
-      const iso = d.toISOString().slice(0, 10);
-      const label = d.toLocaleDateString(undefined, { weekday: 'short' });
-      days.push({ iso, label });
-    }
-    return days;
-  }, []);
-
-  const playedSet = useMemo(() => new Set(playedDates), [playedDates]);
-  const todayISO = new Date().toISOString().slice(0, 10);
-  const isVisible = streakJustBroke && !!topicName;
+  const { topicName, streakBrokenAfterDaysMissed: daysMissed, playedDates, dismissStreakBroken } = useGameStore();
+  const isVisible = daysMissed !== null && !!topicName;
 
   // All hooks above run on every render; only the output is conditional.
   if (!isVisible) return null;
@@ -75,7 +47,7 @@ export function StreakBrokenOverlay() {
           Oh no. Your streak broke.
         </div>
         <div style={{ fontSize: 18, fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 18 }}>
-          You were gone for {daysMissed} days. That happens to everyone.
+          You were gone for {daysMissed} {daysMissed === 1 ? 'day' : 'days'}. That happens to everyone.
         </div>
 
         <div style={{ maxWidth: 520, margin: '0 auto 18px', textAlign: 'left' }}>
@@ -90,43 +62,7 @@ export function StreakBrokenOverlay() {
         </div>
 
         <div style={{ margin: '14px auto 18px', maxWidth: 420 }}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 8 }}>
-            {last7.map((d) => {
-              const isToday = d.iso === todayISO;
-              const didPlay = playedSet.has(d.iso);
-              const bg = didPlay ? (isToday ? '#1A7A4E' : '#5C3EBC') : 'rgba(255,255,255,0.1)';
-              const border = isToday && !didPlay ? '2px solid rgba(212,88,26,0.9)' : '2px solid rgba(255,255,255,0.12)';
-              return (
-                <motion.div
-                  key={d.iso}
-                  animate={isToday && !didPlay ? { boxShadow: ['0 0 0 0 rgba(212,88,26,0)', '0 0 0 8px rgba(212,88,26,0.25)', '0 0 0 0 rgba(212,88,26,0)'] } : {}}
-                  transition={isToday && !didPlay ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : {}}
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 999,
-                    background: bg,
-                    border,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontWeight: 900,
-                    fontSize: 14,
-                  }}
-                >
-                  {didPlay ? '✓' : ''}
-                </motion.div>
-              );
-            })}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
-            {last7.map((d) => (
-              <div key={`${d.iso}-lbl`} style={{ width: 28, textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>
-                {d.label}
-              </div>
-            ))}
-          </div>
+          <StreakCalendar playedDates={playedDates} />
           <div style={{ marginTop: 12, fontSize: 14, fontWeight: 800, color: 'rgba(255,255,255,0.85)' }}>
             Today is Day 1 of your new streak
           </div>
@@ -160,11 +96,12 @@ export function StreakBrokenOverlay() {
 }
 
 function App() {
-  const checkAndUpdateStreak = useGameStore(s => s.checkAndUpdateStreak);
+  const checkStreak = useGameStore((s) => s.checkStreak);
 
+  // Opening the app only checks for a missed day; practising grows the streak.
   useEffect(() => {
-    checkAndUpdateStreak();
-  }, [checkAndUpdateStreak]);
+    checkStreak();
+  }, [checkStreak]);
 
   return (
     <ErrorBoundary>
