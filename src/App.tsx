@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo } from 'react';
 
 import LandingPage from './pages/LandingPage';
@@ -11,7 +11,6 @@ import { useGameStore } from './store/gameStore';
 import ByteTypewriter from './components/ByteTypewriter';
 import Byte from './components/Byte';
 import { motion, AnimatePresence } from 'framer-motion';
-import { speak, stopSpeaking } from './utils/voice';
 import ErrorBoundary from './components/ErrorBoundary';
 
 function daysBetween(from: string, to: string) {
@@ -48,13 +47,7 @@ export function StreakBrokenOverlay() {
   const todayISO = new Date().toISOString().slice(0, 10);
   const isVisible = streakJustBroke && !!topicName;
 
-  // Hooks must run on every render, so the visibility check lives inside the effect.
-  useEffect(() => {
-    if (!isVisible) return;
-    speak('I waited for you. Come back every day and your streak grows.');
-    return () => stopSpeaking();
-  }, [isVisible]);
-
+  // All hooks above run on every render; only the output is conditional.
   if (!isVisible) return null;
 
   return (
@@ -167,16 +160,6 @@ export function StreakBrokenOverlay() {
   );
 }
 
-function RouteSpeechStopper() {
-  const location = useLocation();
-  useEffect(() => {
-    // Stop current utterance when changing routes.
-    stopSpeaking();
-    return () => stopSpeaking();
-  }, [location.pathname]);
-  return null;
-}
-
 function App() {
   const checkAndUpdateStreak = useGameStore(s => s.checkAndUpdateStreak);
 
@@ -187,7 +170,6 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-        <RouteSpeechStopper />
         <AnimatePresence>
           <StreakBrokenOverlay />
         </AnimatePresence>

@@ -1,8 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import TapToContinueHint from './TapToContinueHint';
 import { useTapGate } from '../hooks/useTapGate';
-import { speak } from '../utils/voice';
 
 interface HintButtonProps {
   hint: string;
@@ -12,10 +11,6 @@ interface HintButtonProps {
 
 function HintRevealPanel({ hint }: { hint: string }) {
   const gate = useTapGate(() => {}, hint, true);
-
-  useEffect(() => {
-    speak(hint);
-  }, [hint]);
 
   return (
     <motion.div

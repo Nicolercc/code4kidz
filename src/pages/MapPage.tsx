@@ -5,7 +5,6 @@ import { useGameStore } from '../store/gameStore';
 import ByteTypewriter from '../components/ByteTypewriter';
 import XPCounter from '../components/XPCounter';
 import StreakBadge from '../components/StreakBadge';
-import { speak, stopSpeaking } from '../utils/voice';
 
 interface LessonNode {
   id: string;
@@ -310,11 +309,6 @@ function MapScreen({ topicName }: { topicName: string }) {
       : completedLessons.length >= 6
         ? 'Look at you! You finished Level 1. Level 2 is coming soon.'
         : 'Nice work! Tap the next glowing node to keep going.';
-
-  useEffect(() => {
-    speak(contextMessage);
-    return () => stopSpeaking();
-  }, [contextMessage]);
 
   useEffect(() => {
     const t = window.setTimeout(() => setShowByteBubble(false), 6000);

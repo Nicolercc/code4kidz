@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import Byte from './Byte';
 import ByteTypewriter from './ByteTypewriter';
 import FlowBackButton from './FlowBackButton';
-import { speak, stopSpeaking } from '../utils/voice';
 
 interface WarmUpStepProps {
   bytePrompt: string;
@@ -17,11 +16,6 @@ interface WarmUpStepProps {
 // editor keystroke (see utils/validator.ts). Fixed in the validator work.
 export default function WarmUpStep({ bytePrompt, instruction, lessonNumber }: WarmUpStepProps) {
   const [timeLeft, setTimeLeft] = useState(60);
-
-  useEffect(() => {
-    speak(bytePrompt);
-    return () => stopSpeaking();
-  }, [bytePrompt]);
 
   useEffect(() => {
     // BUGFIX: warm-up/intro must never auto-advance. Timer is visual only.

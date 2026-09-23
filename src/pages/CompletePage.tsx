@@ -12,7 +12,6 @@ import { lesson06 } from '../data/lessons/lesson-06';
 import { play } from '../utils/sounds';
 import Byte from '../components/Byte';
 import FlowBackButton from '../components/FlowBackButton';
-import { speak, stopSpeaking } from '../utils/voice';
 
 const lessons = {
   '1': lesson01,
@@ -50,11 +49,6 @@ function CompleteScreen({ lesson, topicName }: { lesson: Lesson; topicName: stri
     if (typeof field === 'function') return field(topicName);
     return field.replace(/\{topic\}/g, topicName);
   };
-
-  useEffect(() => {
-    speak(resolve(lesson.celebrationQuote));
-    return () => stopSpeaking();
-  }, [lesson.id]);
 
   // Visible confetti bursts on mount (rendered above all content).
   useEffect(() => {

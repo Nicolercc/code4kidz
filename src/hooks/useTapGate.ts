@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
-import { stopSpeaking } from '../utils/voice';
 
 export interface UseTapGateResult {
   /** Text is always shown in full immediately — always true when active. */
@@ -51,7 +50,6 @@ export function useTapGate(
 
   const advance = useCallback((e?: MouseEvent) => {
     e?.stopPropagation();
-    stopSpeaking();
     onAdvanceRef.current();
   }, []);
 
@@ -60,7 +58,6 @@ export function useTapGate(
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         e.stopPropagation();
-        stopSpeaking();
         onAdvanceRef.current();
       }
     },

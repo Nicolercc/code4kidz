@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { stopSpeaking } from '../utils/voice'
 
 export type MascotMood = 'idle' | 'cheer' | 'think' | 'sad' | 'story' | 'celebrate'
 
@@ -30,7 +29,6 @@ interface GameState {
   playedDates: string[]
   streakJustBroke: boolean
   isMuted: boolean
-  voiceEnabled: boolean
 
   // Lesson state
   code: string
@@ -63,7 +61,6 @@ interface GameState {
   checkAndUpdateStreak: () => void
   setHasEdited: () => void
   toggleMute: () => void
-  toggleVoiceEnabled: () => void
   dismissStreakBroken: () => void
 }
 
@@ -83,7 +80,6 @@ export const useGameStore = create<GameState>()(
       playedDates: [],
       streakJustBroke: false,
       isMuted: false,
-      voiceEnabled: true,
       code: '',
       failCount: 0,
       hintsUsed: 0,
@@ -128,17 +124,7 @@ export const useGameStore = create<GameState>()(
 
       setHasEdited: () => set({ hasEditedCurrentStep: true }),
 
-      toggleMute: () => set((s) => {
-        const nextMuted = !s.isMuted
-        if (nextMuted) stopSpeaking()
-        return { isMuted: nextMuted }
-      }),
-
-      toggleVoiceEnabled: () => set((s) => {
-        const next = !s.voiceEnabled
-        if (!next) stopSpeaking()
-        return { voiceEnabled: next }
-      }),
+      toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
 
       dismissStreakBroken: () => set({ streakJustBroke: false }),
 

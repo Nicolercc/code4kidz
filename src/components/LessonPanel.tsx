@@ -1,11 +1,9 @@
-import { useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import Byte from './Byte';
 import ByteTypewriter, { type BubbleMood } from './ByteTypewriter';
 import HintButton from './HintButton';
 import StepProgress from './StepProgress';
 import { motion, AnimatePresence } from 'framer-motion';
-import { speak } from '../utils/voice';
 
 interface LessonPanelProps {
   instruction: string;
@@ -53,13 +51,6 @@ export default function LessonPanel({
 }: LessonPanelProps) {
   const { mascotMood, byteMessage, failCount, currentStepIndex } = useGameStore();
   const btMood: BubbleMood = mascotMood === 'celebrate' ? 'cheer' : (mascotMood as BubbleMood);
-
-  // Voice reads what is already on screen.
-  // This is the central source of truth for prompts/cheers throughout the lesson flow.
-  // (speak() itself checks mute + voiceEnabled.)
-  useEffect(() => {
-    speak(byteMessage);
-  }, [byteMessage]);
 
   return (
     <div className="h-full flex flex-col p-5 overflow-y-auto">

@@ -22,7 +22,6 @@ import Byte from '../components/Byte';
 import ByteTypewriter from '../components/ByteTypewriter';
 import FlowBackButton from '../components/FlowBackButton';
 import { useTapGate } from '../hooks/useTapGate';
-import { speak, stopSpeaking } from '../utils/voice';
 
 const lessons = {
   '1': lesson01,
@@ -86,8 +85,6 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
     completedLessons,
     isMuted,
     toggleMute,
-    voiceEnabled,
-    toggleVoiceEnabled,
   } = useGameStore();
 
   const [validationState, setValidationState] = useState<'idle' | 'pass' | 'fail'>('idle');
@@ -141,7 +138,6 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
     hasTypedRef.current = false;
     setSplashDone(false);
     setSplashBarComplete(false);
-    stopSpeaking();
   }, [lesson.id]);
 
   // FAIL fix: entering a lesson refills hearts and clears fail counter
@@ -462,13 +458,6 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
     return () => window.clearTimeout(t);
   }, [isLesson1Warmup, splashDone, introIsShort, handleSplashContinue]);
 
-  useEffect(() => {
-    if (!isLesson1Warmup) return;
-    if (splashDone) return;
-    speak(introText);
-    return () => stopSpeaking();
-  }, [lesson.id, isLesson1Warmup, splashDone, introText]);
-
   if (!step) return null;
 
   const previewBorderClass =
@@ -569,17 +558,6 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
         </button>
       </div>
       <div className="absolute top-4 right-4 z-50 flex items-center gap-3">
-        <button
-          onClick={toggleVoiceEnabled}
-          className="flex items-center justify-center font-bold text-sm transition-colors"
-          style={{ width: 40, height: 36, borderRadius: 18, border: '2px solid #D4CFF5', background: 'white', color: '#5C3EBC', cursor: 'pointer' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#EDE9FB'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#5C3EBC'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'white'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#D4CFF5'; }}
-          aria-label={voiceEnabled ? 'Disable voice narration' : 'Enable voice narration'}
-          title={voiceEnabled ? 'Voice on' : 'Voice off'}
-        >
-          {voiceEnabled ? '🗣️' : '🗣️🚫'}
-        </button>
         <button
           onClick={toggleMute}
           className="flex items-center justify-center font-bold text-sm transition-colors"
