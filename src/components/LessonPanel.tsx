@@ -14,6 +14,8 @@ interface LessonPanelProps {
   justFailed?: boolean;
   isTyping?: boolean;
   isStuck?: boolean;
+  /** Counted mistakes on this step; the hint unlocks after two. */
+  failCount?: number;
 }
 
 // ── Typing indicator (3 bouncing dots) ────────────────────────────────────────
@@ -48,8 +50,9 @@ export default function LessonPanel({
   justFailed = false,
   isTyping = false,
   isStuck = false,
+  failCount = 0,
 }: LessonPanelProps) {
-  const { mascotMood, byteMessage, failCount, currentStepIndex } = useGameStore();
+  const { mascotMood, byteMessage, currentStepIndex } = useGameStore();
   const btMood: BubbleMood = mascotMood === 'celebrate' ? 'cheer' : (mascotMood as BubbleMood);
 
   return (

@@ -32,13 +32,8 @@ interface GameState {
 
   // Lesson state
   code: string
-  failCount: number
-  hintsUsed: number
   mascotMood: MascotMood
   byteMessage: string
-
-  // FIX 3: tracks whether the kid has typed at least once on the current step
-  hasEditedCurrentStep: boolean
 
   // Mistake tracking (session only — NOT persisted)
   mistakeLog: Record<string, MistakeEntry[]>
@@ -52,14 +47,11 @@ interface GameState {
   advanceStep: () => void
   resetToStep: (index: number) => void
   updateCode: (code: string) => void
-  incrementFail: () => void
-  resetFail: () => void
   setMascotMood: (mood: MascotMood, message: string) => void
   recordMistake: (lessonId: string, entry: MistakeEntry) => void
   clearMistakeLog: (lessonId: string) => void
   markLessonComplete: (lessonId: string) => void
   checkAndUpdateStreak: () => void
-  setHasEdited: () => void
   toggleMute: () => void
   dismissStreakBroken: () => void
 }
@@ -81,11 +73,8 @@ export const useGameStore = create<GameState>()(
       streakJustBroke: false,
       isMuted: false,
       code: '',
-      failCount: 0,
-      hintsUsed: 0,
       mascotMood: 'idle',
       byteMessage: '',
-      hasEditedCurrentStep: false,
       mistakeLog: {},
 
       setTopic: (name) => set({ topicName: name }),
@@ -106,23 +95,14 @@ export const useGameStore = create<GameState>()(
 
       advanceStep: () => set((s) => ({
         currentStepIndex: s.currentStepIndex + 1,
-        failCount: 0,
-        hintsUsed: 0,
         code: '',
-        hasEditedCurrentStep: false,
       })),
 
-      resetToStep: (index) => set({ currentStepIndex: index, failCount: 0, hintsUsed: 0, hasEditedCurrentStep: false }),
+      resetToStep: (index) => set({ currentStepIndex: index }),
 
       updateCode: (code) => set({ code }),
 
-      incrementFail: () => set((s) => ({ failCount: s.failCount + 1 })),
-
-      resetFail: () => set({ failCount: 0, hintsUsed: 0 }),
-
       setMascotMood: (mood, message) => set({ mascotMood: mood, byteMessage: message }),
-
-      setHasEdited: () => set({ hasEditedCurrentStep: true }),
 
       toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
 
@@ -146,10 +126,7 @@ export const useGameStore = create<GameState>()(
         currentStepIndex: 0,
         hearts: 3,
         heartsLostThisLesson: 0,
-        failCount: 0,
-        hintsUsed: 0,
         code: '',
-        hasEditedCurrentStep: false,
       })),
 
       checkAndUpdateStreak: () => {
@@ -184,7 +161,7 @@ export const useGameStore = create<GameState>()(
     {
       name: 'code4kidz-store',
       partialize: (s) => {
-        const { hasEditedCurrentStep: _hasEdited, mistakeLog: _mistakeLog, ...rest } = s
+        const { mistakeLog: _mistakeLog, ...rest } = s
         return rest
       }
     }
