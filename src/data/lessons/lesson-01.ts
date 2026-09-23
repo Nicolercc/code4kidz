@@ -38,7 +38,7 @@ export const lesson01: Lesson = {
 
   byteIntro: `Hey! I am Byte — your robot coding buddy!
 Today you are going to build your FIRST ever webpage — about {topic}!
-Millions of people will be able to see what you make.
+Every website on the internet starts the same way yours will.
 Let us start RIGHT NOW.`,
 
   byteStoryMoment: `I have wanted to make my own webpage for SO long.

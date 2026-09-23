@@ -25,7 +25,8 @@ export default function XPCounter() {
       glowTimer.current = setTimeout(() => setIsGlowing(false), 900);
       timers.push(setTimeout(() => setPop(null), 2000));
 
-      // Count up over 800ms with tick sounds.
+      // Count up over 800ms with one pop (this used to play a sound per XP point).
+      play('xpPop');
       if (animTimer.current) clearInterval(animTimer.current);
       const start = displayXp;
       const end = xp;
@@ -34,13 +35,7 @@ export default function XPCounter() {
       animTimer.current = setInterval(() => {
         const t = Math.min(1, (Date.now() - startTs) / durationMs);
         const next = Math.floor(start + (end - start) * t);
-        setDisplayXp((cur) => {
-          if (next > cur) {
-            // one click per number tick
-            for (let i = cur + 1; i <= next; i++) play('xpPop');
-          }
-          return next;
-        });
+        setDisplayXp(next);
         if (t >= 1) {
           if (animTimer.current) clearInterval(animTimer.current);
           animTimer.current = null;

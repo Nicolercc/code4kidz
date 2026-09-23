@@ -41,13 +41,22 @@ interface PreviewProps {
   code: string;
 }
 
+/** The page's <title>, shown on the fake browser tab like a real browser would. */
+function pageTitle(code: string): string {
+  return new DOMParser().parseFromString(code, 'text/html').title.trim();
+}
+
 export default function Preview({ code }: PreviewProps) {
+  const title = pageTitle(code);
   return (
     <div className="w-full h-full bg-white rounded-xl overflow-hidden shadow-sm border border-brand-border">
-      <div className="bg-brand-bg px-4 py-2 border-b border-brand-border flex gap-2">
-        <div className="w-3 h-3 rounded-full bg-brand-red opacity-50" />
-        <div className="w-3 h-3 rounded-full bg-brand-orange opacity-50" />
-        <div className="w-3 h-3 rounded-full bg-brand-green opacity-50" />
+      <div className="bg-brand-bg px-4 py-2 border-b border-brand-border flex items-center gap-2 h-10">
+        <div aria-hidden="true" className="w-3 h-3 shrink-0 rounded-full bg-brand-red opacity-50" />
+        <div aria-hidden="true" className="w-3 h-3 shrink-0 rounded-full bg-brand-orange opacity-50" />
+        <div aria-hidden="true" className="w-3 h-3 shrink-0 rounded-full bg-brand-green opacity-50" />
+        <div className="ml-2 min-w-0 truncate rounded-t-md bg-white border border-b-0 border-brand-border px-3 py-0.5 text-xs font-semibold text-brand-dark">
+          <span className="sr-only">Browser tab: </span>{title || 'Untitled page'}
+        </div>
       </div>
       {/* Kid code runs fully sandboxed: no scripts, and a unique origin so it can
           never reach the app's DOM or localStorage. Validation reads the raw code

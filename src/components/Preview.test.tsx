@@ -13,6 +13,11 @@ describe('Preview', () => {
     expect(iframe.getAttribute('sandbox')).toBe('')
   })
 
+  it('shows the page title on the browser tab, like lesson 1 promises', () => {
+    const { getByText } = render(<Preview code="<html><head><title>Space facts</title></head></html>" />)
+    expect(getByText('Space facts')).toBeTruthy()
+  })
+
   it('renders the kid code into the frame', () => {
     const { container } = render(<Preview code="<h1>Space</h1>" />)
     expect(container.querySelector('iframe')!.getAttribute('srcdoc')).toContain('<h1>Space</h1>')

@@ -3,7 +3,7 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useGameStore } from '../store/gameStore';
-import { getLesson, resolveText, type Lesson, type StrOrFn } from '../data/lessons';
+import { getLesson, isLessonUnlocked, resolveText, type Lesson, type StrOrFn } from '../data/lessons';
 import { play } from '../utils/sounds';
 import Byte from '../components/Byte';
 import FlowBackButton from '../components/FlowBackButton';
@@ -12,8 +12,10 @@ export default function CompletePage() {
   const { id } = useParams();
   const lesson = getLesson(id);
   const topicName = useGameStore((s) => s.topicName);
+  const completedLessons = useGameStore((s) => s.completedLessons);
 
-  if (!lesson || !topicName) return <Navigate to="/map" replace />;
+  // Typing /complete/6 used to mark lesson 6 done; only an unlocked lesson can be completed.
+  if (!lesson || !topicName || !isLessonUnlocked(lesson, completedLessons)) return <Navigate to="/map" replace />;
   return <CompleteScreen key={lesson.id} lesson={lesson} topicName={topicName} />;
 }
 
