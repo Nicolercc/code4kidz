@@ -3,28 +3,14 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useGameStore } from '../store/gameStore';
-import { lesson01, type Lesson } from '../data/lessons/lesson-01';
-import { lesson02 } from '../data/lessons/lesson-02';
-import { lesson03 } from '../data/lessons/lesson-03';
-import { lesson04 } from '../data/lessons/lesson-04';
-import { lesson05 } from '../data/lessons/lesson-05';
-import { lesson06 } from '../data/lessons/lesson-06';
+import { getLesson, resolveText, type Lesson, type StrOrFn } from '../data/lessons';
 import { play } from '../utils/sounds';
 import Byte from '../components/Byte';
 import FlowBackButton from '../components/FlowBackButton';
 
-const lessons = {
-  '1': lesson01,
-  '2': lesson02,
-  '3': lesson03,
-  '4': lesson04,
-  '5': lesson05,
-  '6': lesson06,
-};
-
 export default function CompletePage() {
   const { id } = useParams();
-  const lesson = lessons[id as keyof typeof lessons];
+  const lesson = getLesson(id);
   const topicName = useGameStore((s) => s.topicName);
 
   if (!lesson || !topicName) return <Navigate to="/map" replace />;
@@ -44,11 +30,7 @@ function CompleteScreen({ lesson, topicName }: { lesson: Lesson; topicName: stri
     clearMistakeLog
   } = useGameStore();
 
-  const resolve = (field: string | ((t: string) => string) | undefined): string => {
-    if (!field) return '';
-    if (typeof field === 'function') return field(topicName);
-    return field.replace(/\{topic\}/g, topicName);
-  };
+  const resolve = (field?: StrOrFn) => resolveText(field, topicName);
 
   // Visible confetti bursts on mount (rendered above all content).
   useEffect(() => {

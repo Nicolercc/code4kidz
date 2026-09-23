@@ -3,12 +3,7 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EditorView } from '@codemirror/view';
 import { useGameStore } from '../store/gameStore';
-import { lesson01, type Lesson, type LessonStep } from '../data/lessons/lesson-01';
-import { lesson02 } from '../data/lessons/lesson-02';
-import { lesson03 } from '../data/lessons/lesson-03';
-import { lesson04 } from '../data/lessons/lesson-04';
-import { lesson05 } from '../data/lessons/lesson-05';
-import { lesson06 } from '../data/lessons/lesson-06';
+import { getLesson, isLessonUnlocked, passMessageFor, resolveText, type Lesson, type LessonStep, type StrOrFn } from '../data/lessons';
 import { validate } from '../utils/validator';
 import { play } from '../utils/sounds';
 
@@ -22,15 +17,6 @@ import Byte from '../components/Byte';
 import ByteTypewriter from '../components/ByteTypewriter';
 import FlowBackButton from '../components/FlowBackButton';
 import { useTapGate } from '../hooks/useTapGate';
-
-const lessons = {
-  '1': lesson01,
-  '2': lesson02,
-  '3': lesson03,
-  '4': lesson04,
-  '5': lesson05,
-  '6': lesson06,
-};
 
 const STUCK_THRESHOLD_MS = 20_000;
 const TYPING_WINDOW_MS   = 2_000;
@@ -54,7 +40,7 @@ function getHandoffText(stepType: string, topicName: string): string | null {
 
 export default function LessonPage() {
   const { id } = useParams();
-  const lesson = lessons[id as keyof typeof lessons];
+  const lesson = getLesson(id);
   const topicName = useGameStore((s) => s.topicName);
 
   if (!lesson || !topicName || !id) return <Navigate to="/map" replace />;
@@ -123,11 +109,7 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
   const passRecordedRef = useRef(false);
   const stepRef = useRef<LessonStep | null>(null);
 
-  const resolve = (field: string | ((t: string) => string) | undefined): string => {
-    if (!field) return '';
-    if (typeof field === 'function') return field(topicName);
-    return field.replace(/\{topic\}/g, topicName);
-  };
+  const resolve = (field?: StrOrFn) => resolveText(field, topicName);
 
   // Reset lesson on ID change
   useEffect(() => {
@@ -147,16 +129,8 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
 
   // FAIL fix: block access to lesson N unless lesson N-1 is completed
   useEffect(() => {
-    if (!lesson) return;
-    const order = ['lesson-01', 'lesson-02', 'lesson-03', 'lesson-04', 'lesson-05', 'lesson-06'];
-    const idx = order.indexOf(lesson.id);
-    if (idx > 0) {
-      const prev = order[idx - 1];
-      if (!completedLessons.includes(prev)) {
-        navigate('/map', { replace: true });
-      }
-    }
-  }, [lesson?.id, completedLessons, navigate]);
+    if (!isLessonUnlocked(lesson, completedLessons)) navigate('/map', { replace: true });
+  }, [lesson, completedLessons, navigate]);
 
   // FAIL fix: when hearts hit 0, end the lesson and return to map
   useEffect(() => {
@@ -352,34 +326,7 @@ function LessonScreen({ lesson, id }: { lesson: Lesson; id: string }) {
         setIsTyping(false);
         if (stuckTimerRef.current) clearTimeout(stuckTimerRef.current);
 
-        const STEP_PASS_MESSAGES: Record<string, string[]> = {
-          'lesson-01': [
-            "Yes! That is the foundation of EVERY website.",
-            "The head is in! Your page has a brain now.",
-            "Space! That is your page title. Look at the browser tab.",
-            "You found my bug! See how the slash makes it close?",
-            "YOUR words. YOUR page. Look at that preview.",
-          ],
-          'lesson-02': [
-            "h1 — the biggest heading on the internet. Yours.",
-            "h2 is smaller. The hierarchy is working.",
-            "Three levels of headings. Real web designers do this.",
-            "Found it! That slash was the whole problem.",
-            "Two h2s! Wikipedia uses exactly this structure.",
-          ],
-          'lesson-03': [
-            "First paragraph done. Your page is talking.",
-            "Two paragraphs. Your Space page has things to say.",
-            "Three paragraphs — a beginning, middle, and end.",
-            "Fixed it! Every p needs its partner.",
-            "That is YOUR best paragraph. Read it back.",
-          ],
-        };
-
-        const messages = STEP_PASS_MESSAGES[lesson.id] ?? [];
-        // currentStepIndex - 1 because warmup is index 0
-        const messageIndex = Math.max(0, currentStepIndex - 1);
-        const passMsg = messages[messageIndex] ?? 'Perfect! You are building something real.';
+        const passMsg = resolve(passMessageFor(lesson, step));
 
         // Beat 3/5: physical reaction now (jump), speech after landing
         setMascotMood('idle', '');

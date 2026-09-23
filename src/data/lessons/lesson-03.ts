@@ -59,6 +59,7 @@ You learned this in Lesson 2.`,
         `Every article, every Wikipedia entry, every blog post\n` +
         `is made of p tags.\n` +
         `Tell me something true about ${topic}.`,
+      passMessage: `First paragraph done. Your page is talking.`,
       hint: `A paragraph opens with <p> and closes with </p>.\n` +
             `Everything between those two tags is what people read.\n` +
             `Example: <p>This is my sentence.</p>`,
@@ -88,6 +89,7 @@ You learned this in Lesson 2.`,
         `Two paragraphs means more information for your readers.\n` +
         `What is something interesting about ${topic}\n` +
         `that would surprise someone?`,
+      passMessage: `Two paragraphs. Your {topic} page has things to say.`,
       hint: `Just add another p tag below the first one:\n` +
             `<p>First paragraph.</p>\n` +
             `<p>Second paragraph here.</p>`,
@@ -120,6 +122,7 @@ You learned this in Lesson 2.`,
         `Three paragraphs tell a story: beginning, middle, end.\n` +
         `Every article you have ever read does this.\n` +
         `What does ${topic} mean to YOU? That is paragraph 3.`,
+      passMessage: `Three paragraphs — a beginning, middle, and end.`,
       hint: `Add one more paragraph — your third and final one:\n` +
             `<p>Third paragraph here — personal and real.</p>`,
       startingCode: (topic: string) =>
@@ -150,6 +153,7 @@ You learned this in Lesson 2.`,
         `Look at the paragraph tags carefully.\n` +
         `Every <p> needs a </p> to close it.\n` +
         `Which one is missing its partner?`,
+      passMessage: `Fixed it! Every p needs its partner.`,
       hint: `A paragraph needs two tags: one to open, one to close.\n` +
             `Open: <p>   Close: </p>\n` +
             `The closing tag has a forward slash /\n` +
@@ -183,6 +187,7 @@ You learned this in Lesson 2.`,
         `This is the moment.\n` +
         `Your sentences. Your page. Your ${topic}.\n` +
         `Replace those placeholders and watch the preview.`,
+      passMessage: `That is YOUR best paragraph. Read it back.`,
       hint: `Make sure you have:\n` +
             `1. An h1 tag\n` +
             `2. An h2 tag\n` +

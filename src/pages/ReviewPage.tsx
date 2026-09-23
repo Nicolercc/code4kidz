@@ -1,12 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
-import { lesson01, type Lesson } from '../data/lessons/lesson-01';
-import { lesson02 } from '../data/lessons/lesson-02';
-import { lesson03 } from '../data/lessons/lesson-03';
-import { lesson04 } from '../data/lessons/lesson-04';
-import { lesson05 } from '../data/lessons/lesson-05';
-import { lesson06 } from '../data/lessons/lesson-06';
+import { getLesson, resolveText, type Lesson, type StrOrFn } from '../data/lessons';
 import { validate } from '../utils/validator';
 import { play } from '../utils/sounds';
 
@@ -16,18 +11,9 @@ import LessonPanel from '../components/LessonPanel';
 import XPCounter from '../components/XPCounter';
 import FlowBackButton from '../components/FlowBackButton';
 
-const lessons = {
-  '1': lesson01,
-  '2': lesson02,
-  '3': lesson03,
-  '4': lesson04,
-  '5': lesson05,
-  '6': lesson06,
-};
-
 export default function ReviewPage() {
   const { id } = useParams();
-  const lesson = lessons[id as keyof typeof lessons];
+  const lesson = getLesson(id);
   const topicName = useGameStore((s) => s.topicName);
 
   if (!lesson || !topicName || !id) return <Navigate to="/map" replace />;
@@ -43,11 +29,7 @@ function ReviewScreen({ lesson, id, topicName }: { lesson: Lesson; id: string; t
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const resolve = (field: string | ((t: string) => string) | undefined): string => {
-    if (!field) return '';
-    if (typeof field === 'function') return field(topicName);
-    return field.replace(/\{topic\}/g, topicName);
-  };
+  const resolve = (field?: StrOrFn) => resolveText(field, topicName);
 
   // Copy before sorting: Array.prototype.sort mutates, and this array belongs to the store.
   const mistakes = [...(mistakeLog[lesson.id] ?? [])]

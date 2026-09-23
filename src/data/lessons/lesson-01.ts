@@ -1,6 +1,6 @@
 import { tagsBalanced, textOf } from '../../utils/htmlChecks'
 
-type StrOrFn = string | ((topic: string) => string)
+export type StrOrFn = string | ((topic: string) => string)
 
 export interface LessonStep {
   id: string

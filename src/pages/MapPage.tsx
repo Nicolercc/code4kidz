@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
+import { LESSONS, isLessonUnlocked } from '../data/lessons';
 import ByteTypewriter from '../components/ByteTypewriter';
 import XPCounter from '../components/XPCounter';
 import StreakBadge from '../components/StreakBadge';
@@ -17,12 +18,7 @@ interface LessonNode {
 }
 
 const LESSON_NODES: LessonNode[] = [
-  { id: 'lesson-01', num: 1, title: 'Say Hello to the Web!', emoji: '👋' },
-  { id: 'lesson-02', num: 2, title: 'Make a Big Title!',     emoji: '🔤' },
-  { id: 'lesson-03', num: 3, title: 'Write Your Story',      emoji: '📝' },
-  { id: 'lesson-04', num: 4, title: 'Paint With Colors!',    emoji: '🎨' },
-  { id: 'lesson-05', num: 5, title: 'Make a List',           emoji: '📋' },
-  { id: 'lesson-06', num: 6, title: 'Add a Picture!',        emoji: '🖼️' },
+  ...LESSONS.map((l) => ({ id: l.id, num: l.lessonNumber, title: l.title, emoji: l.emoji })),
   { id: 'lesson-07', num: 7, title: 'Build a Button!',       emoji: '🔒', comingSoon: true, teaser: 'Make it clickable + stylish.', comingSoonTopic: 'Buttons & interactions' },
   { id: 'lesson-08', num: 8, title: 'Layout Like a Pro',      emoji: '🔒', comingSoon: true, teaser: 'Flexbox makes magic rows.', comingSoonTopic: 'Flexbox & layout' },
   { id: 'lesson-09', num: 9, title: 'Animate Your Page',      emoji: '🔒', comingSoon: true, teaser: 'Tiny motion that feels alive.', comingSoonTopic: 'CSS animations' },
@@ -279,10 +275,8 @@ function MapScreen({ topicName }: { topicName: string }) {
   );
 
   const isAccessible = (node: LessonNode): boolean => {
-    if (node.comingSoon) return false;
-    if (node.num === 1) return true;
-    const prevId = `lesson-0${String(node.num - 1).padStart(1, '0')}`;
-    return completedLessons.includes(prevId);
+    const lesson = LESSONS.find((l) => l.id === node.id);
+    return !!lesson && isLessonUnlocked(lesson, completedLessons);
   };
 
   useEffect(() => {
