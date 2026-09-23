@@ -1,5 +1,3 @@
-import { useEffect, useRef } from 'react';
-
 const SHELL = (code: string) => {
   const trimmed = code.trim();
 
@@ -41,21 +39,9 @@ const SHELL = (code: string) => {
 
 interface PreviewProps {
   code: string;
-  onIframeReady?: (iframe: HTMLIFrameElement) => void;
 }
 
-export default function Preview({ code, onIframeReady }: PreviewProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-    if (iframeRef.current) {
-      iframeRef.current.srcdoc = SHELL(code);
-      if (onIframeReady) {
-        onIframeReady(iframeRef.current);
-      }
-    }
-  }, [code, onIframeReady]);
-
+export default function Preview({ code }: PreviewProps) {
   return (
     <div className="w-full h-full bg-white rounded-xl overflow-hidden shadow-sm border border-brand-border">
       <div className="bg-brand-bg px-4 py-2 border-b border-brand-border flex gap-2">
@@ -63,11 +49,14 @@ export default function Preview({ code, onIframeReady }: PreviewProps) {
         <div className="w-3 h-3 rounded-full bg-brand-orange opacity-50" />
         <div className="w-3 h-3 rounded-full bg-brand-green opacity-50" />
       </div>
+      {/* Kid code runs fully sandboxed: no scripts, and a unique origin so it can
+          never reach the app's DOM or localStorage. Validation reads the raw code
+          (utils/validator.ts), so nothing needs to look inside this frame. */}
       <iframe
-        ref={iframeRef}
-        title="preview"
+        srcDoc={SHELL(code)}
+        title="Live preview of your page"
         className="w-full h-[calc(100%-40px)] border-none"
-        sandbox="allow-scripts allow-same-origin"
+        sandbox=""
       />
     </div>
   );
