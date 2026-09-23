@@ -1,6 +1,8 @@
 {
   "name": "code4kidz",
   "version": "0.0.0",
+  "private": true,
+  "type": "module",
   "license": "MIT",
   "packageManager": "pnpm@9.9.0",
   "engines": {
@@ -8,14 +10,35 @@
     "pnpm": ">=9.9.0"
   },
   "scripts": {
-    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
-    "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
-  "private": true,
+  "dependencies": {
+    "@codemirror/lang-html": "^6.4.11",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.41.0",
+    "canvas-confetti": "^1.9.4",
+    "codemirror": "^6.0.2",
+    "framer-motion": "^12.35.1",
+    "howler": "^2.2.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-router-dom": "^7.14.0",
+    "zustand": "^5.0.12"
+  },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/howler": "^2.2.12",
+    "@types/node": "^25.3.5",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "prettier": "^3.8.1",
+    "tailwindcss": "^4.2.1",
     "typescript": "~5.9.2",
-    "prettier": "^3.8.1"
+    "vite": "^7.3.1"
   }
 }

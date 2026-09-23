@@ -1,69 +1,33 @@
-# Code4Kidz (Monorepo)
+# Code4Kidz
 
-Code4Kidz is a pnpm workspace monorepo with a frontend app and an API server.
+A browser-based HTML/CSS course for kids aged 7–10. The learner picks a topic they love, and every lesson builds a real webpage about it in a live editor, guided by a robot mascot called Byte.
 
-## Repo structure
+> **Status:** prototype under active remediation. It was prototyped with Replit Agent from my product and curriculum specs. I'm now auditing and re-engineering it by hand (tests, accessibility, correctness). See the commit history from `chore/strip-scaffold` onward.
 
-- **Workspace root**: this directory (contains `pnpm-workspace.yaml` and the root `package.json`)
-- **Frontend**: `artifacts/code4kidz` (Vite + React)
-- **Backend**: `artifacts/api-server` (Express)
-- **Shared libs**: `lib/*`
-- **Scripts**: `scripts/`
+## Stack
 
-## Prerequisites
+React 19 · TypeScript · Vite · Tailwind CSS v4 · Zustand (persisted to localStorage) · CodeMirror 6 · Framer Motion · React Router
 
-- **Node.js** (recent LTS recommended)
-- **pnpm** (the repo enforces pnpm; `npm`/`yarn` installs will be rejected)
-
-## Install (one time)
-
-From the repo root:
-
-```bash
-pnpm install
-```
+There is no backend. Progress lives in the browser.
 
 ## Run locally
 
-### Frontend (`artifacts/code4kidz`)
+Requires Node 20+ and pnpm 9+.
 
 ```bash
-cd artifacts/code4kidz
-pnpm run dev
+pnpm install
+pnpm dev          # http://localhost:5173
 ```
 
-Useful commands:
+## Scripts
 
-- `pnpm run build`
-- `pnpm run serve`
-- `pnpm run typecheck`
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Start the dev server |
+| `pnpm build` | Typecheck, then build to `dist/` |
+| `pnpm preview` | Serve the production build |
+| `pnpm typecheck` | Run TypeScript with no emit |
 
-### Backend (`artifacts/api-server`)
+## Deploy
 
-The API server requires `PORT`.
-
-```bash
-cd artifacts/api-server
-export PORT=3001
-pnpm run dev
-```
-
-Health check:
-
-- `GET /api/healthz`
-
-Useful commands:
-
-- `pnpm run build` (outputs `dist/index.mjs`)
-- `pnpm run start` (runs `node --enable-source-maps ./dist/index.mjs`)
-- `pnpm run typecheck`
-
-## Typecheck / build the whole monorepo
-
-From the repo root:
-
-```bash
-pnpm run typecheck
-pnpm run build
-```
-
+`vercel.json` rewrites every path to `index.html` so client-side routes work on refresh. Build command `pnpm build`, output directory `dist`.
