@@ -32,3 +32,4 @@ replit.nix
 # Playwright
 /test-results/
 /playwright-report/
+.vercel
