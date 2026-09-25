@@ -302,7 +302,7 @@ export default function LandingPage() {
               {[{ val: 'Free', label: 'Forever' }, { val: 'Ages', label: '7–10' }, { val: 'Real', label: 'HTML & CSS' }].map((s) => (
                 <div key={s.label}>
                   <div className="text-2xl font-black text-kidz-teal font-poppins">{s.val}</div>
-                  <div className="text-white/60 text-xs font-medium font-quicksand">{s.label}</div>
+                  <div className="text-white/80 text-xs font-medium font-quicksand">{s.label}</div>
                 </div>
               ))}
             </motion.div>
@@ -398,7 +398,7 @@ export default function LandingPage() {
                   `}
                 >
                   {node.done && (
-                    <div className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-kidz-teal font-black text-base shadow border-2 border-teal-300 font-poppins">
+                    <div className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-teal-700 font-black text-base shadow border-2 border-teal-300 font-poppins">
                       ✓
                     </div>
                   )}
@@ -407,10 +407,10 @@ export default function LandingPage() {
                   ) : (
                     <>
                       <span className="text-3xl">{node.done ? '👋' : '🎨'}</span>
-                      <div className="text-white font-black text-sm leading-tight font-poppins">Lesson {node.num}</div>
-                      <div className={`font-semibold text-sm font-poppins ${node.current ? 'text-yellow-900' : 'text-white'}`}>{node.title}</div>
+                      <div className={`font-black text-sm leading-tight font-poppins ${node.current ? 'text-yellow-900' : 'text-teal-950'}`}>Lesson {node.num}</div>
+                      <div className={`font-semibold text-sm font-poppins ${node.current ? 'text-yellow-900' : 'text-teal-950'}`}>{node.title}</div>
                       {node.xp && (
-                        <div className={`text-xs font-bold px-2 py-0.5 rounded-full font-poppins ${node.current ? 'bg-yellow-300/60 text-yellow-900' : 'bg-white/20 text-white'}`}>
+                        <div className={`text-xs font-bold px-2 py-0.5 rounded-full font-poppins ${node.current ? 'bg-yellow-300/60 text-yellow-900' : 'bg-white/20 text-teal-950'}`}>
                           {node.xp}
                         </div>
                       )}
@@ -425,7 +425,7 @@ export default function LandingPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate('/onboarding')}
-                className="px-8 py-4 bg-kidz-purple text-white font-black text-lg rounded-2xl shadow-[0_6px_0_#5b21b6] hover:shadow-[0_4px_0_#5b21b6] hover:translate-y-0.5 active:shadow-none transition-all flex items-center gap-3 font-poppins"
+                className="px-8 py-4 bg-[#7C3AED] text-white font-black text-lg rounded-2xl shadow-[0_6px_0_#5b21b6] hover:shadow-[0_4px_0_#5b21b6] hover:translate-y-0.5 active:shadow-none transition-all flex items-center gap-3 font-poppins"
               >
                 <span>▶</span> Continue Lesson 3
               </motion.button>
@@ -475,13 +475,13 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="py-20 bg-gradient-to-r from-[#0D9B8A] to-[#0D7C7B] relative overflow-hidden">
+      <section className="py-20 bg-gradient-to-r from-[#0A6A64] to-[#0A5F5E] relative overflow-hidden">
         <AnimatedHeroBg />
         <FadeIn className="relative z-10 text-center max-w-2xl mx-auto px-6">
           <h2 className="text-4xl font-black text-white mb-3 font-poppins">
             Ready to Start Your Coding Adventure? 🚀
           </h2>
-          <p className="text-white/80 text-lg mb-8 font-quicksand">
+          <p className="text-white text-lg mb-8 font-quicksand">
             Join 50,000+ kids already building amazing things with code!
           </p>
           <motion.button

@@ -23,10 +23,21 @@ test.beforeEach(async ({ page }) => {
   await freshStart(page)
 })
 
+/** Sections fade in on scroll and stay at opacity 0 until then, which hides them from axe. */
+async function revealScrollSections(page: import('@playwright/test').Page) {
+  const height = await page.evaluate(() => document.body.scrollHeight)
+  for (let y = 0; y < height; y += 300) {
+    await page.evaluate((top) => window.scrollTo(0, top), y)
+    await page.waitForTimeout(100)
+  }
+  await page.evaluate(() => window.scrollTo(0, 0))
+}
+
 for (const path of ['/', '/onboarding', '/nope']) {
   test(`${path} has no axe violations`, async ({ page }) => {
     await page.goto(path)
     await page.waitForTimeout(800)
+    await revealScrollSections(page)
     await expectNoViolations(page)
   })
 }
