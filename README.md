@@ -9,7 +9,7 @@ dog), and every lesson builds a real webpage about it in a live code editor, gui
 
 I designed the product and wrote the curriculum: six lessons, the step types (write, fix a bug, find a bug, make it
 yours), the topic personalisation and all of Byte's copy. The first version was prototyped with Replit Agent from those
-specs. I then audited that prototype and re-engineered it by hand. The commit history from `chore/strip-scaffold`
+specs. I then audited that prototype and re-engineered it. The commit history from `chore/strip-scaffold`
 onward is that work, one concern per commit, each with the evidence it was tested on.
 
 What the audit found and what changed (with before/after numbers) is in
