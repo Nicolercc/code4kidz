@@ -7,9 +7,10 @@ dog), and every lesson builds a real webpage about it in a live code editor, gui
 
 ## How this was built
 
-I designed the product and wrote the curriculum: six lessons, the step types (write, fix a bug, find a bug, make it
-yours), the topic personalisation and all of Byte's copy. The first version was prototyped with Replit Agent from those
-specs. I then audited that prototype and re-engineered it. The commit history from `chore/strip-scaffold`
+The Code4Kidz concept came from a collaborator who brought me in to build the frontend. I implemented the learning experience
+and researched and structured the lesson flow (six lessons; write, fix a bug, find a bug and make-it-yours steps; topic
+personalisation; Byte's copy), using Replit Agent for rapid AI-assisted prototyping. I then audited that prototype
+and re-engineered it. The commit history from `chore/strip-scaffold`
 onward is that work, one concern per commit, each with the evidence it was tested on.
 
 What the audit found and what changed (with before/after numbers) is in

@@ -2,7 +2,7 @@
 
 > Draft for my portfolio. Every claim links to the commit or file that shows it.
 
-**Role:** product design, curriculum, and the engineering remediation described here.
+**Role:** Frontend Engineer · UX & Accessibility. The concept came from a collaborator; I built the frontend, structured the lesson flow, and did the engineering remediation described here.
 **Stack:** React 19, TypeScript, Zustand, CodeMirror 6, Vitest, Playwright, axe-core.
 
 ## The idea
@@ -12,8 +12,8 @@ already loves. They pick a topic ("Dinosaurs"), and every lesson builds a real w
 from `<html>` to styled headings, lists and images. Each lesson mixes four kinds of step: write new code, fix Byte's
 bug, find a bug, and "make it yours". A mascot, Byte, carries the instructions and the feedback.
 
-I designed the product and wrote the curriculum and copy. I prototyped it quickly with Replit Agent from those specs.
-That got a convincing demo on screen, but I didn't trust it, so I audited it the way a senior reviewer would.
+The concept came from a collaborator who brought me in to build the frontend. I researched and structured the lesson flow and
+copy, and prototyped it quickly with Replit Agent. That got a convincing demo on screen, but I didn't trust it, so I audited it the way a senior reviewer would.
 
 ## What the audit found
 
