@@ -24,7 +24,7 @@ const FEATURES = [
     bg: 'bg-pink-50',
     iconBg: 'bg-kidz-pink',
     title: 'Hearts System',
-    desc: 'You get 5 hearts per session. Make mistakes? No worries — Byte helps you fix them!',
+    desc: 'You get 3 hearts per session. Make mistakes? No worries — Byte helps you fix them!',
   },
   {
     icon: '🔥',
@@ -34,11 +34,11 @@ const FEATURES = [
     desc: 'Code every day to keep your streak alive. Consistency builds coding superpowers!',
   },
   {
-    icon: '👥',
+    icon: '✅',
     bg: 'bg-purple-50',
     iconBg: 'bg-kidz-purple',
-    title: 'Classroom Mode',
-    desc: 'Teachers can track progress, assign lessons, and cheer on their class in real time.',
+    title: 'Byte Checks Your Code',
+    desc: 'Byte checks the code you actually wrote, not just how the page looks, and has a hint ready when you get stuck.',
   },
   {
     icon: '🔒',
@@ -482,7 +482,7 @@ export default function LandingPage() {
             Ready to Start Your Coding Adventure? 🚀
           </h2>
           <p className="text-white text-lg mb-8 font-quicksand">
-            Join 50,000+ kids already building amazing things with code!
+            Real HTML and CSS, a live preview, and a robot buddy who checks your work.
           </p>
           <motion.button
             whileHover={{ scale: 1.05 }}
