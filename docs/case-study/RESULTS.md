@@ -58,6 +58,7 @@ Not yet done: a recording with a real screen reader (VoiceOver). The trees above
 | Streak-broken screen | white-screen crash ("Rendered more hooks") | shows and dismisses | `2e35b7b` |
 | XP, hearts, review | steps never gave XP, hearts never lost, review never reachable (stale editor callback) | all work, covered by hook tests | `2e35b7b` |
 | Answer checking | 29 of 123 test cases failed: warm-ups passed on "x", CSS steps passed on a single space, two bug-fix steps passed unfixed | 123 / 123 | `49cac03` |
+| Answer checking, follow-up review | commented-out tags passed (`<!-- <html></html> -->`), titles/headings/paragraphs/alt text of only spaces passed, and `<head lang="en">` failed | 9 new cases, all pass; original 123 still pass | `0ea9bb1` |
 | Onboarding | entering a topic skipped both celebration screens | shown | `f3985f9` |
 | Streak | counted app opens, mixed UTC and local days, "gone for 0 days" | counts practice, local days, correct count, migrated saves | `d8478ed` |
 | Sounds | every sound 404'd | synthesised tones | `b4fed31` |
