@@ -116,7 +116,7 @@ You learned this in Lesson 5.`,
       xp: 10,
       validate: (doc: Document) =>
         doc.querySelector('img[alt]') !== null &&
-        (doc.querySelector('img')?.getAttribute('alt')?.length ?? 0) > 0,
+        (doc.querySelector('img')?.getAttribute('alt')?.trim().length ?? 0) > 0,
     },
 
     {
