@@ -1,5 +1,7 @@
 # Code4Kidz
 
+![Code4Kidz Lesson 1 showing Byte’s retry feedback, a paragraph in the editor, and Robots in the live preview](https://github.com/user-attachments/assets/2f56fc88-7980-4ecc-9250-921f6a632aa5)
+
 ## Try the live demo
 
 [Open Lesson 1](https://code4kidz-six.vercel.app/lesson/1). In the first exercise, enter `<p>Robots</p>` and select **Check my code** to see Byte’s retry feedback. Replace it with `<html></html>` and check again to advance. The live preview renders the code separately from the lesson’s validation.
