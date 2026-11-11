@@ -1,5 +1,9 @@
 # Code4Kidz
 
+## Try the live demo
+
+[Open Lesson 1](https://code4kidz-six.vercel.app/lesson/1). In the first exercise, enter `<p>Robots</p>` and select **Check my code** to see Byte’s retry feedback. Replace it with `<html></html>` and check again to advance. The live preview renders the code separately from the lesson’s validation.
+
 A browser-based HTML and CSS course for kids aged 7–10. The learner picks something they love (dinosaurs, space, their
 dog), and every lesson builds a real webpage about it in a live code editor, guided by a robot called Byte.
 
