@@ -1,5 +1,5 @@
 import type { Lesson } from './lesson-01'
-import { tagsBalanced } from '../../utils/htmlChecks'
+import { hasText, tagsBalanced } from '../../utils/htmlChecks'
 
 export const lesson03: Lesson = {
   id: 'lesson-03',
@@ -73,9 +73,7 @@ You learned this in Lesson 2.`,
         `  </body>\n` +
         `</html>`,
       xp: 10,
-      validate: (doc: Document) =>
-        doc.querySelector('p') !== null &&
-        (doc.querySelector('p')?.textContent?.length ?? 0) > 0,
+      validate: (doc: Document) => hasText(doc, 'p'),
     },
 
     {

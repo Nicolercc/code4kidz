@@ -8,6 +8,26 @@
  * instead is deterministic, testable, and ignores the preview's defaults.
  */
 
+/**
+ * The kid's code with HTML comments removed. A browser never renders a
+ * commented-out tag, so raw-text checks must not count one either:
+ * `<!-- <html></html> -->` is not a page.
+ */
+export function withoutComments(rawCode: string): string {
+  return rawCode.replace(/<!--[\s\S]*?(-->|$)/g, '')
+}
+
+/** True when an opening `<tag>` (with or without attributes) and a closing `</tag>` both appear. */
+export function hasTagPair(rawCode: string, tag: string): boolean {
+  const code = rawCode.toLowerCase()
+  return new RegExp(`<${tag}(\\s[^>]*)?>`).test(code) && new RegExp(`</${tag}\\s*>`).test(code)
+}
+
+/** True when the first `selector` match has visible text (not just spaces). */
+export function hasText(doc: Document, selector: string): boolean {
+  return textOf(doc, selector) !== ''
+}
+
 /** Parse the kid's code the same way the browser would, without rendering it. */
 export function parseHtml(rawCode: string): Document {
   return new DOMParser().parseFromString(rawCode, 'text/html')

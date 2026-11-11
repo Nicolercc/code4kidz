@@ -206,3 +206,26 @@ describe.each(LESSONS.map((l) => [l.id, l] as const))('%s', (lessonId, lesson) =
     })
   })
 })
+
+// Answers a teacher would mark differently from the original checks: commented-out
+// code, whitespace-only content, and valid tags with attributes.
+describe('validators match what the page actually shows', () => {
+  const stepOf = (lessonId: string, stepId: string) => {
+    const lesson = [lesson01, lesson02, lesson03, lesson04, lesson05, lesson06].find((l) => l.id === lessonId)!
+    return lesson.steps.find((s) => s.id === stepId)!
+  }
+  const cases: Array<[string, string, string, 'pass' | 'fail', string]> = [
+    ['lesson-01', 'step-1', '<!-- <html></html> -->', 'fail', 'a commented-out tag is not on the page'],
+    ['lesson-01', 'step-2', '<html>\n<!-- <head></head> -->\n</html>', 'fail', 'a commented-out head is not on the page'],
+    ['lesson-01', 'step-2', '<html>\n<head lang="en"></head>\n</html>', 'pass', 'attributes on <head> are valid HTML'],
+    ['lesson-01', 'step-3', '<html>\n<head>\n<title>   </title>\n</head>\n</html>', 'fail', 'a title of only spaces shows nothing'],
+    ['lesson-02', 'step-1', page('', '    <h1>   </h1>'), 'fail', 'an empty-looking heading shows nothing'],
+    ['lesson-02', 'step-2', page('', '    <h1>Space</h1>\n    <h2> </h2>'), 'fail', 'an empty-looking subheading shows nothing'],
+    ['lesson-02', 'warmup', '<html>\n<body class="page">\n<h1>Space</h1>\n</body>\n</html>', 'pass', 'attributes on <body> are valid HTML'],
+    ['lesson-03', 'step-1', page('', '    <h1>Space</h1>\n    <p>  </p>'), 'fail', 'a blank paragraph shows nothing'],
+    ['lesson-06', 'step-2', page('', '    <img src="star.png" alt="  ">'), 'fail', 'blank alt text describes nothing'],
+  ]
+  it.each(cases)('%s %s: %j → %s (%s)', (lessonId, stepId, code, expected) => {
+    expect(validate(stepOf(lessonId, stepId), code, TOPIC)).toBe(expected)
+  })
+})
