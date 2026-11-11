@@ -3,7 +3,21 @@
 A browser-based HTML and CSS course for kids aged 7–10. The learner picks something they love (dinosaurs, space, their
 dog), and every lesson builds a real webpage about it in a live code editor, guided by a robot called Byte.
 
-![Lesson screen on desktop: instructions, code editor and live preview](docs/case-study/responsive/after-desktop.png)
+**Live demo:** https://code4kidz-six.vercel.app
+
+[![CI](https://github.com/Nicolercc/code4kidz/actions/workflows/ci.yml/badge.svg)](https://github.com/Nicolercc/code4kidz/actions/workflows/ci.yml)
+
+![Code4Kidz Lesson 1, step 1 of 5. The mission says to type <html></html>. The editor holds <p>Robots</p>, Byte says "Not quite! Open the hint if you need help.", a red bar under the editor says "Keep trying...", and the live preview shows the word Robots. Three hearts and 0 XP remain.](docs/images/code4kidz-lesson1-feedback.jpg)
+
+## Try it in a minute: Lesson 1
+
+1. **Open [Lesson 1](https://code4kidz-six.vercel.app/lesson/1).** On a first visit the app asks for a topic first (the screenshots use "Robots"), then drops you into the lesson.
+2. **Type `<p>Robots</p>` and press *Check my code*.** The preview renders the word, but the step asks for the page container, so the answer is rejected: Byte says *Not quite!* and the editor shows *Keep trying…*. Pausing to think never counts as a mistake; only pressing *Check my code* does.
+3. **Replace it with `<html></html>` and check again.** The step passes, you earn 1 XP, and the lesson moves to step 2 (add a `<head>`).
+
+The check reads the code you typed, not the rendered preview. That's why a page that *looks* right can still be the wrong answer for the step. See [how the validators work](#how-it-works).
+
+<img src="docs/images/code4kidz-lesson1-pass.jpg" width="640" alt="After typing <html></html> and checking: Lesson 1 is on step 2 of 5, 1 XP is shown, and Byte explains that the head is like the brain of your Robots page. The new mission asks for <head></head> inside the html tags.">
 
 ## How this was built
 
