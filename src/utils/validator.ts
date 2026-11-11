@@ -1,5 +1,5 @@
 import type { LessonStep } from '../data/lessons/lesson-01'
-import { parseHtml } from './htmlChecks'
+import { parseHtml, withoutComments } from './htmlChecks'
 
 export type ValidationResult = 'pass' | 'fail'
 
@@ -10,7 +10,9 @@ export type ValidationResult = 'pass' | 'fail'
  */
 export function validate(step: LessonStep, rawCode: string, topic: string): ValidationResult {
   try {
-    return step.validate(parseHtml(rawCode), rawCode, topic) ? 'pass' : 'fail'
+    // Commented-out code is invisible on the page, so it can't earn a pass.
+    const code = withoutComments(rawCode)
+    return step.validate(parseHtml(code), code, topic) ? 'pass' : 'fail'
   } catch {
     return 'fail' // never crash on half-typed kid code
   }

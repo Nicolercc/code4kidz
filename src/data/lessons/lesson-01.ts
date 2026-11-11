@@ -1,4 +1,4 @@
-import { tagsBalanced, textOf } from '../../utils/htmlChecks'
+import { hasTagPair, hasText, tagsBalanced, textOf } from '../../utils/htmlChecks'
 
 export type StrOrFn = string | ((topic: string) => string)
 
@@ -116,10 +116,7 @@ It should look like this:
 Notice it is INSIDE — between the opening and closing html tags.`,
       startingCode: '<html>\n  \n</html>',
       xp: 10,
-      validate: (_doc, rawCode) => {
-        const code = rawCode.trim().toLowerCase()
-        return code.includes('<head>') && code.includes('</head>')
-      }
+      validate: (_doc, rawCode) => hasTagPair(rawCode, 'head')
     },
 
     // ── STEP 3: WRITE — The title ──
@@ -143,8 +140,7 @@ Make sure it has a / in the closing tag: </title>`,
       startingCode: '<html>\n  <head>\n    \n  </head>\n</html>',
       xp: 10,
       validate: (doc) => {
-        const title = doc.querySelector('title')
-        return title !== null && (title.textContent?.length ?? 0) > 0
+        return hasText(doc, 'title')
       }
     },
 

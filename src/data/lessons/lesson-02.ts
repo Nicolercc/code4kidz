@@ -1,5 +1,5 @@
 import type { Lesson } from './lesson-01'
-import { tagsBalanced } from '../../utils/htmlChecks'
+import { hasTagPair, hasText, tagsBalanced } from '../../utils/htmlChecks'
 
 export const lesson02: Lesson = {
   id: 'lesson-02',
@@ -48,7 +48,7 @@ You already know this from Lesson 1!`,
         const code = rawCode.trim().toLowerCase()
         // DOMParser auto-inserts html/body; validate structure from raw code.
         const hasHtml = /<html(\s[^>]*)?>/.test(code) && code.includes('</html>')
-        const hasBody = code.includes('<body>') && code.includes('</body>')
+        const hasBody = hasTagPair(code, 'body')
         const hasH1 = code.includes('<h1') && code.includes('</h1>')
         return hasHtml && hasBody && hasH1
       }
@@ -83,8 +83,7 @@ It goes inside your body tags.`,
 </html>`,
       xp: 10,
       validate: (doc) => {
-        const h1 = doc.querySelector('h1')
-        return h1 !== null && (h1.textContent?.length ?? 0) > 0
+        return hasText(doc, 'h1')
       }
     },
 
@@ -116,8 +115,7 @@ Notice how it gets smaller? That is the hierarchy working!`,
 </html>`,
       xp: 10,
       validate: (doc) => {
-        const h2 = doc.querySelector('h2')
-        return h2 !== null && (h2.textContent?.length ?? 0) > 0
+        return hasText(doc, 'h2')
       }
     },
 
