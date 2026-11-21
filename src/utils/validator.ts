@@ -12,7 +12,6 @@ export function validate(step: LessonStep, rawCode: string, topic: string): Vali
   return checkAnswer(step, rawCode, topic, false).result
 }
 
-
 const diagnosisMessages: Record<StepDiagnosis, string> = {
   'html-container-missing': 'Your paragraph appears in the preview. Add opening and closing html tags around it.',
   'html-closing-tag-missing': 'You wrote the opening html tag. Add the closing html tag with a slash.',

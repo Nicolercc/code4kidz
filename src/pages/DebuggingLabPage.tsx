@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import Editor from '../components/Editor'
 import Preview from '../components/Preview'
 import { lesson01 } from '../data/lessons/lesson-01'
+import { withoutComments } from '../utils/htmlChecks'
 import { checkAnswer } from '../utils/validator'
 
 const tasks = [
@@ -76,15 +77,16 @@ export default function DebuggingLabPage() {
     const wrappedContent = draft.task === 0
       ? /^\s*<html>\s*<p>\s*Robots\s*<\/p>\s*<\/html>\s*$/i
       : /^\s*<html>\s*<h1>\s*Space\s*<\/h1>\s*<\/html>\s*$/i
-    if (!wrappedContent.test(draft.code)) {
+    if (!wrappedContent.test(withoutComments(draft.code))) {
       setFeedback(`Keep the ${task.topic} text and its tags inside the html tags.`)
       return
     }
 
     setPassed(true)
+    setShowHint(false)
     setFeedback(draft.task === 0
       ? 'You added both html tags and kept Robots on the page.'
-      : 'You fixed a new page on your own. The preview can show your text even when a tag is missing.')
+      : 'You fixed a new page. The preview can show your text even when a tag is missing.')
   }
 
   function changeTask(nextTask: TaskIndex) {
@@ -116,7 +118,7 @@ export default function DebuggingLabPage() {
 
       <div className="mt-4 flex flex-wrap gap-3">
         <button type="button" onClick={checkCode} className="min-h-11 rounded-lg bg-brand-purple px-4 font-semibold text-white">Check my code</button>
-        {draft.task === 0 && !passed && (
+        {draft.task === 0 && (
           <button type="button" aria-expanded={showHint} aria-controls="lab-hint" onClick={() => setShowHint(!showHint)}
             className="min-h-11 rounded-lg border border-brand-purple px-4 font-semibold text-brand-purple">
             {showHint ? 'Hide hint' : 'Need a hint?'}
@@ -124,7 +126,7 @@ export default function DebuggingLabPage() {
         )}
       </div>
       <p role="status" className="mt-3 min-h-6 font-semibold text-brand-dark">{feedback}</p>
-      {draft.task === 0 && !passed && (
+      {draft.task === 0 && (
         <p id="lab-hint" hidden={!showHint} className="mt-2 rounded-lg bg-brand-purpleL p-3">
           Put <code>&lt;html&gt;</code> before the paragraph. Use a slash in the tag that goes after it.
         </p>
