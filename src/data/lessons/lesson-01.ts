@@ -99,6 +99,7 @@ The / in the closing tag tells the browser where it ends.`,
         if (/^<p>[^<>]+<\/p>$/i.test(code.trim()) && hasText(doc, 'p')) {
           return 'html-container-missing'
         }
+        return undefined
       },
       // Use rawCode — DOMParser always inserts <html> even for empty strings.
       validate: (_doc, rawCode) => {
