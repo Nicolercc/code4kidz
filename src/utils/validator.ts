@@ -1,4 +1,4 @@
-import type { LessonStep } from '../data/lessons/lesson-01'
+import type { LessonStep, StepDiagnosis } from '../data/lessons/lesson-01'
 import { parseHtml, withoutComments } from './htmlChecks'
 
 export type ValidationResult = 'pass' | 'fail'
@@ -9,11 +9,30 @@ export type ValidationResult = 'pass' | 'fail'
  * and can be unit-tested (see data/lessons/lessons.test.ts).
  */
 export function validate(step: LessonStep, rawCode: string, topic: string): ValidationResult {
+  return checkAnswer(step, rawCode, topic, false).result
+}
+
+
+const diagnosisMessages: Record<StepDiagnosis, string> = {
+  'html-container-missing': 'Your paragraph appears in the preview. Add opening and closing html tags around it.',
+  'html-closing-tag-missing': 'You wrote the opening html tag. Add the closing html tag with a slash.',
+}
+
+export const RETRY_MESSAGE = 'Not quite! Open the hint if you need help.'
+
+/** Check and diagnose the same parsed draft when the learner asks for feedback. */
+export function checkAnswer(step: LessonStep, rawCode: string, topic: string, includeDiagnosis = true):
+  { result: 'pass' } | { result: 'fail'; message: string } {
   try {
-    // Commented-out code is invisible on the page, so it can't earn a pass.
     const code = withoutComments(rawCode)
-    return step.validate(parseHtml(code), code, topic) ? 'pass' : 'fail'
+    const doc = parseHtml(code)
+    if (step.validate(doc, code, topic)) return { result: 'pass' }
+
+    const diagnosis = includeDiagnosis ? step.diagnose?.(doc, code) : undefined
+    if (diagnosis) return { result: 'fail', message: diagnosisMessages[diagnosis] }
   } catch {
-    return 'fail' // never crash on half-typed kid code
+    // Give partial drafts the same neutral feedback as unrecognized mistakes.
   }
+
+  return { result: 'fail', message: RETRY_MESSAGE }
 }
