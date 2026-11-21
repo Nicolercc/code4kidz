@@ -3,7 +3,7 @@ import type { EditorView } from '@codemirror/view'
 import { useGameStore } from '../store/gameStore'
 import { passMessageFor, resolveText, type Lesson, type LessonStep } from '../data/lessons'
 import { attemptReducer, costsHeart, initialAttempt, xpForPass } from '../lesson/attempt'
-import { validate } from '../utils/validator'
+import { checkAnswer, validate } from '../utils/validator'
 import { play } from '../utils/sounds'
 import { useTimers } from './useTimers'
 
@@ -168,7 +168,7 @@ export function useLessonMachine({ lesson, step, stepIndex, topic, editorViewRef
   }, [lesson, step, resolve, timers])
 
   // Only reached from an explicit "Check my code".
-  const handleFail = useCallback(() => {
+  const handleFail = useCallback((message: string) => {
     const { loseHeart, setMascotMood, hearts } = useGameStore.getState()
     const isWarmup = step.type === 'warmup'
     const failCountAfter = attemptRef.current.failCount + (isWarmup ? 0 : 1)
@@ -183,15 +183,16 @@ export function useLessonMachine({ lesson, step, stepIndex, topic, editorViewRef
 
     if (isWarmup) setMascotMood('think', 'Not quite yet. Keep going! Warm-ups never cost hearts.')
     else if (costsHeart(failCountAfter) && hearts > 0) loseHeart()
-    else setMascotMood('think', 'Not quite! Open the hint if you need help.')
+    else setMascotMood('think', message)
   }, [step, timers])
 
   /** "Check my code": pass, or show and count the mistake. */
   const checkNow = useCallback(() => {
     if (attemptRef.current.phase === 'passed') return
     timers.cancel('check')
-    if (validate(step, lastCodeRef.current, topic) === 'pass') handlePass()
-    else handleFail()
+    const answer = checkAnswer(step, lastCodeRef.current, topic)
+    if (answer.result === 'pass') handlePass()
+    else handleFail(answer.message)
   }, [step, topic, timers, handlePass, handleFail])
 
   const onCodeChange = useCallback(

@@ -2,6 +2,8 @@ import { hasTagPair, hasText, tagsBalanced, textOf } from '../../utils/htmlCheck
 
 export type StrOrFn = string | ((topic: string) => string)
 
+export type StepDiagnosis = 'html-container-missing' | 'html-closing-tag-missing'
+
 export interface LessonStep {
   id: string
   type: 'warmup' | 'write' | 'fix' | 'identify' | 'combine'
@@ -11,6 +13,7 @@ export interface LessonStep {
   hint: StrOrFn
   startingCode: StrOrFn
   xp: number
+  diagnose?: (doc: Document, rawCode: string) => StepDiagnosis | undefined
   // FIX 3: if true, the step will NOT pass until the kid types at least one character
   editRequired?: boolean
   /** Pure check of the kid's code. See utils/htmlChecks.ts for the helpers. */
@@ -89,6 +92,15 @@ Opening: <html>  Closing: </html>
 The / in the closing tag tells the browser where it ends.`,
       startingCode: '',
       xp: 10,
+      diagnose: (doc, code) => {
+        // Match these simple drafts only. In more complex HTML, a tag-shaped
+        // string could be inside an attribute or raw-text element.
+        if (/^<html>$/i.test(code.trim())) return 'html-closing-tag-missing'
+        if (/^<p>[^<>]+<\/p>$/i.test(code.trim()) && hasText(doc, 'p')) {
+          return 'html-container-missing'
+        }
+        return undefined
+      },
       // Use rawCode — DOMParser always inserts <html> even for empty strings.
       validate: (_doc, rawCode) => {
         const code = rawCode.trim().toLowerCase()

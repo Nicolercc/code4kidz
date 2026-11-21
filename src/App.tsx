@@ -6,6 +6,7 @@ import OnboardingPage from './pages/OnboardingPage';
 import MapPage from './pages/MapPage';
 // The editor screens pull in CodeMirror and confetti; load them on first visit
 // so the landing page and map stay light.
+const DebuggingLabPage = lazy(() => import('./pages/DebuggingLabPage'));
 const LessonPage = lazy(() => import('./pages/LessonPage'));
 const ReviewPage = lazy(() => import('./pages/ReviewPage'));
 const CompletePage = lazy(() => import('./pages/CompletePage'));
@@ -106,7 +107,7 @@ export function StreakBrokenOverlay() {
   );
 }
 
-function App() {
+function CourseStreak() {
   const checkStreak = useGameStore((s) => s.checkStreak);
 
   // Opening the app only checks for a missed day; practising grows the streak.
@@ -114,19 +115,25 @@ function App() {
     checkStreak();
   }, [checkStreak]);
 
+  return <AnimatePresence><StreakBrokenOverlay /></AnimatePresence>;
+}
+
+function App() {
   return (
     <ErrorBoundary>
       {/* Every framer-motion animation follows the OS "reduce motion" setting. */}
       <MotionConfig reducedMotion="user">
       <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-        <AnimatePresence>
-          <StreakBrokenOverlay />
-        </AnimatePresence>
+        <Routes>
+          <Route path="/debugging-lab" element={null} />
+          <Route path="*" element={<CourseStreak />} />
+        </Routes>
         <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/debugging-lab" element={<DebuggingLabPage />} />
           <Route path="/lesson/:id" element={<LessonPage />} />
           <Route path="/review/:id" element={<ReviewPage />} />
           <Route path="/complete/:id" element={<CompletePage />} />
